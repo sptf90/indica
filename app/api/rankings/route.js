@@ -35,6 +35,7 @@ export async function GET(request) {
       sponsorCompanyId = company.id;
     }
 
+    // Arquivo (final) e apuração entram mesmo sem inscrição do utilizador.
     const items = await listActiveRankings(user.id, {
       cityId: sponsorCompanyId ? undefined : filterCityId,
       preferCityId: sponsorCompanyId ? null : user.city_id ?? null,

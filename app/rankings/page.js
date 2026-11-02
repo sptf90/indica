@@ -32,21 +32,27 @@ function hasPrizePositions(ranking) {
 /** Rankings em apuração ou finalizados com prêmios a acompanhar. */
 function isAwaitingPrizes(ranking) {
   if (!ranking) return false;
-  if (ranking.status === "tallying") return true;
-  return ranking.status === "final" && hasPrizePositions(ranking);
+  const status = phaseStatus(ranking);
+  if (status === "tallying") return true;
+  return status === "final" && hasPrizePositions(ranking);
+}
+
+function phaseStatus(ranking) {
+  return ranking.effectiveStatus || ranking.status;
 }
 
 function statusBadgeFor(ranking) {
-  if (ranking.status === "open") {
+  const status = phaseStatus(ranking);
+  if (status === "open") {
     return { label: "Ativo", tone: "ok" };
   }
-  if (ranking.status === "tallying") {
+  if (status === "tallying") {
     return { label: "Em apuração", tone: "warn" };
   }
-  if (ranking.status === "final" && hasPrizePositions(ranking)) {
+  if (status === "final" && hasPrizePositions(ranking)) {
     return { label: "Aguardando prêmios", tone: "info" };
   }
-  if (ranking.status === "final") {
+  if (status === "final") {
     return { label: "Finalizado", tone: "done" };
   }
   return { label: ranking.statusLabel || ranking.status, tone: "muted" };
@@ -86,6 +92,12 @@ function SponsorMark({ name, logoUrl }) {
 
 function RankingRow({ ranking, busyId, onEnroll, companyScope }) {
   const badge = statusBadgeFor(ranking);
+  const status = phaseStatus(ranking);
+  const canEnroll =
+    ranking.acceptsEnrollment === true ||
+    (ranking.acceptsEnrollment == null &&
+      ranking.status === "open" &&
+      status === "open");
   const prizeHint = hasPrizePositions(ranking)
     ? ` · Top ${ranking.prizePositions.join(", ")} com prêmios`
     : "";
@@ -93,8 +105,8 @@ function RankingRow({ ranking, busyId, onEnroll, companyScope }) {
   return (
     <li
       className={`ranking-row${ranking.sponsored ? " is-sponsored" : ""}${
-        ranking.status === "final" ? " is-final" : ""
-      }${ranking.status === "tallying" ? " is-tallying" : ""}`}
+        status === "final" ? " is-final" : ""
+      }${status === "tallying" ? " is-tallying" : ""}`}
     >
       <div className="ranking-row-main">
         <div className="ranking-row-top">
@@ -133,7 +145,7 @@ function RankingRow({ ranking, busyId, onEnroll, companyScope }) {
         ) : ranking.enrolled ? (
           <>
             <span className="ranking-badge">Inscrito</span>
-            {ranking.status !== "final" ? (
+            {status !== "final" ? (
               <span className="ranking-balance">
                 {ranking.myBalance ?? 0} pts
               </span>
@@ -142,7 +154,7 @@ function RankingRow({ ranking, busyId, onEnroll, companyScope }) {
               Ver classificação
             </Link>
           </>
-        ) : ranking.status === "open" ? (
+        ) : canEnroll ? (
           <button
             type="button"
             className="btn-solid sm"
@@ -265,24 +277,27 @@ function RankingsPageContent() {
 
   const visibleItems = useMemo(() => {
     if (phase === "ativos") {
-      return items.filter((r) => r.status === "open");
+      return items.filter((r) => phaseStatus(r) === "open");
     }
     if (phase === "premios") {
       return items.filter(isAwaitingPrizes);
     }
     if (phase === "finalizados") {
-      return items.filter((r) => r.status === "final");
+      // Arquivo: todos os final, inscrito ou não.
+      return items.filter((r) => phaseStatus(r) === "final");
     }
     return items;
   }, [items, phase]);
 
-  const openItems = visibleItems.filter((r) => r.status === "open");
-  const tallyingItems = visibleItems.filter((r) => r.status === "tallying");
+  const openItems = visibleItems.filter((r) => phaseStatus(r) === "open");
+  const tallyingItems = visibleItems.filter(
+    (r) => phaseStatus(r) === "tallying"
+  );
   const awaitingPrizeFinals = visibleItems.filter(
-    (r) => r.status === "final" && hasPrizePositions(r)
+    (r) => phaseStatus(r) === "final" && hasPrizePositions(r)
   );
   const plainFinalItems = visibleItems.filter(
-    (r) => r.status === "final" && !hasPrizePositions(r)
+    (r) => phaseStatus(r) === "final" && !hasPrizePositions(r)
   );
   /** No filtro Finalizados, manter todos os final (incl. com prêmios). */
   const finalSectionItems =

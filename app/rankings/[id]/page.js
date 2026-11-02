@@ -225,22 +225,33 @@ function Podium({ top3, highlightsLabel }) {
   );
 }
 
-function MyPositionCard({ me, enrolled, busy, onEnroll }) {
+function MyPositionCard({ me, enrolled, busy, onEnroll, canEnroll, status }) {
   if (!enrolled && !me) {
+    const isArchive = status === "final" || status === "tallying";
     return (
       <aside className="rm-side-card rm-my-pos">
         <h2>Minha posição</h2>
-        <p className="rm-side-lead">
-          Inscreva-se para entrar na classificação deste período.
-        </p>
-        <button
-          type="button"
-          className="btn-solid rm-side-cta"
-          disabled={busy}
-          onClick={onEnroll}
-        >
-          {busy ? "Inscrevendo…" : "Inscrever-se"}
-        </button>
+        {canEnroll ? (
+          <>
+            <p className="rm-side-lead">
+              Inscreva-se para entrar na classificação deste período.
+            </p>
+            <button
+              type="button"
+              className="btn-solid rm-side-cta"
+              disabled={busy}
+              onClick={onEnroll}
+            >
+              {busy ? "Inscrevendo…" : "Inscrever-se"}
+            </button>
+          </>
+        ) : (
+          <p className="rm-side-lead">
+            {isArchive
+              ? "Você não participou deste ranking. A classificação final continua pública no arquivo."
+              : "Inscrições indisponíveis neste momento."}
+          </p>
+        )}
       </aside>
     );
   }
@@ -636,6 +647,8 @@ export default function RankingDetailPage() {
             enrolled={ranking.enrolled || Boolean(me)}
             busy={busy}
             onEnroll={enroll}
+            canEnroll={ranking.acceptsEnrollment === true}
+            status={ranking.effectiveStatus || ranking.status}
           />
           <SponsorSupportCard ranking={ranking} />
         </aside>
