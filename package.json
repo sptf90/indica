@@ -1,0 +1,36 @@
+{
+  "name": "indica",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:schema": "node scripts/apply-schema.mjs",
+    "db:migrate": "node scripts/migrate-reputation.mjs && node scripts/migrate-rankings.mjs && node scripts/migrate-company-3c.mjs && node scripts/migrate-notifications.mjs && node scripts/migrate-account-deletion.mjs && node scripts/migrate-share-links.mjs && node scripts/migrate-tutorial.mjs && node scripts/migrate-admin.mjs && node scripts/migrate-sponsor-banner.mjs",
+    "db:migrate-rankings": "node scripts/migrate-rankings.mjs",
+    "db:migrate-company": "node scripts/migrate-company-3c.mjs",
+    "db:migrate-notifications": "node scripts/migrate-notifications.mjs",
+    "db:migrate-account-deletion": "node scripts/migrate-account-deletion.mjs",
+    "db:migrate-share-links": "node scripts/migrate-share-links.mjs",
+    "db:migrate-tutorial": "node scripts/migrate-tutorial.mjs",
+    "db:migrate-admin": "node scripts/migrate-admin.mjs",
+    "db:migrate-sponsor-banner": "node scripts/migrate-sponsor-banner.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "mysql2": "^3.15.3",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3"
+  }
+}

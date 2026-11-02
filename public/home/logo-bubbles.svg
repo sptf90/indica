@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 40" fill="none" aria-hidden="true">
+  <!-- Larger speech bubble (back-left) -->
+  <path
+    d="M16.2 3.2c7.15 0 12.7 4.85 12.7 11.15 0 4.15-2.35 7.75-5.95 9.7l.65 5.55-5.95-3.35A14.1 14.1 0 0 1 16.2 26.5c-7.15 0-12.7-4.85-12.7-11.15S9.05 3.2 16.2 3.2Z"
+    stroke="#FD5322"
+    stroke-width="2.75"
+    stroke-linejoin="round"
+  />
+  <!-- Smaller speech bubble (front-right) -->
+  <path
+    d="M31.4 7.1c6.05 0 10.8 4.05 10.8 9.4 0 3.5-1.95 6.55-5 8.2l.55 4.7-4.9-2.75c-.45.06-.92.1-1.4.1-6.05 0-10.8-4.05-10.8-9.4s4.75-9.25 10.75-9.25Z"
+    stroke="#FD5322"
+    stroke-width="2.75"
+    stroke-linejoin="round"
+  />
+</svg>
