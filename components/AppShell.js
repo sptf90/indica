@@ -34,10 +34,18 @@ const NAV_COMPANY = [
   },
 ];
 
-/** Admin MVP: sem Pedir/Indicar — só análise de patrocínio. */
+/** Admin: patrocínios + gestão de rankings (mensal/semanal). */
 const NAV_ADMIN = [
   { href: "/admin", label: "Patrocínios", icon: "shield", exact: true },
-  { href: "/rankings", label: "Rankings", icon: "rank" },
+  {
+    href: "/admin/rankings",
+    label: "Rankings",
+    icon: "rank",
+    children: [
+      { href: "/admin/rankings/mensal", label: "Mensal" },
+      { href: "/admin/rankings/semanal", label: "Semanal" },
+    ],
+  },
   { href: "/perfil", label: "Meu perfil", icon: "user" },
 ];
 
@@ -294,6 +302,44 @@ export default function AppShell({ children }) {
         </Link>
         <nav className="sidebar-nav">
           {NAV.map((item) => {
+            if (item.children?.length) {
+              const groupActive = isActive(pathname, item);
+              return (
+                <div
+                  key={item.href + item.label}
+                  className={`sidebar-group${groupActive ? " is-active" : ""}`}
+                >
+                  <Link
+                    href={item.href}
+                    className={`sidebar-link${groupActive ? " active" : ""}`}
+                    data-tour={item.tourId || undefined}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <NavIcon name={item.icon} />
+                    <span>{item.label}</span>
+                  </Link>
+                  <div className="sidebar-subnav" role="group" aria-label={item.label}>
+                    {item.children.map((child) => {
+                      const childActive = isActive(pathname, {
+                        ...child,
+                        exact: true,
+                      });
+                      return (
+                        <Link
+                          key={child.href + child.label}
+                          href={child.href}
+                          className={`sidebar-sublink${childActive ? " active" : ""}`}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
             const active = isActive(pathname, item);
             return (
               <Link
