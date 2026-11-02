@@ -144,7 +144,7 @@ export default function EmpresaPage() {
   const [editingId, setEditingId] = useState(null);
   /** Nova solicitação aberta (sem editingId). */
   const [isComposing, setIsComposing] = useState(false);
-  /** Wizard: 1 cidade · 2 período · 3 banner · 4 prêmios */
+  /** Wizard: 1 período · 2 banner · 3 prêmios (cidade só no perfil) */
   const [sponsorStep, setSponsorStep] = useState(1);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -262,16 +262,17 @@ export default function EmpresaPage() {
   const formOpen = Boolean(editingId) || isComposing;
 
   const wizardSteps = [
-    { id: 1, label: "Cidade" },
-    { id: 2, label: "Período" },
-    { id: 3, label: "Banner" },
-    { id: 4, label: "Prêmios" },
+    { id: 1, label: "Período" },
+    { id: 2, label: "Banner" },
+    { id: 3, label: "Prêmios" },
   ];
 
   function canAdvanceFrom(step) {
-    if (step === 1) return hasCompanyCity;
-    if (step === 2) return Boolean(editingId) || Boolean(selectedSlot);
-    if (step === 3) {
+    if (step === 1) {
+      if (!hasCompanyCity) return false;
+      return Boolean(editingId) || Boolean(selectedSlot);
+    }
+    if (step === 2) {
       return Boolean(displayName.trim()) && Boolean(bannerUrl.trim());
     }
     return true;
@@ -281,11 +282,13 @@ export default function EmpresaPage() {
     setError("");
     if (!canAdvanceFrom(sponsorStep)) {
       if (sponsorStep === 1) {
-        setError("Defina a cidade de instalação no perfil da empresa.");
-        setProfileOpen(true);
+        if (!hasCompanyCity) {
+          setError("Defina a cidade de instalação no perfil da empresa.");
+          setProfileOpen(true);
+        } else {
+          setError("Selecione um período disponível.");
+        }
       } else if (sponsorStep === 2) {
-        setError("Selecione um período disponível.");
-      } else if (sponsorStep === 3) {
         setError(
           bannerUrl.trim()
             ? "Informe o nome exibido."
@@ -294,7 +297,7 @@ export default function EmpresaPage() {
       }
       return;
     }
-    setSponsorStep((s) => Math.min(4, s + 1));
+    setSponsorStep((s) => Math.min(3, s + 1));
   }
 
   function goPrevStep() {
@@ -303,10 +306,15 @@ export default function EmpresaPage() {
   }
 
   function startCompose() {
+    if (!hasCompanyCity) {
+      setError("Defina a cidade de instalação no perfil antes de solicitar.");
+      setProfileOpen(true);
+      return;
+    }
     resetSponsorshipFormFields();
     if (company?.legalName) setDisplayName(company.legalName);
     setIsComposing(true);
-    setSponsorStep(hasCompanyCity ? 2 : 1);
+    setSponsorStep(1);
     setError("");
     setSuccess("");
     try {
@@ -711,7 +719,7 @@ export default function EmpresaPage() {
     setBannerMeta(src ? { width: 1200, height: 240, canonical: true } : null);
     setSlotModality(r.modality === "monthly" ? "monthly" : "weekly");
     setIsComposing(false);
-    setSponsorStep(3);
+    setSponsorStep(2);
     try {
       document
         .querySelector('[data-tour="emp-sponsor-form"]')
@@ -730,7 +738,7 @@ export default function EmpresaPage() {
 
   async function onSubmitSponsorship(event) {
     event.preventDefault();
-    if (sponsorStep !== 4) {
+    if (sponsorStep !== 3) {
       goNextStep();
       return;
     }
@@ -817,22 +825,6 @@ export default function EmpresaPage() {
     }
   }
 
-  async function onConfirmReward(id) {
-    setError("");
-    setSuccess("");
-    setBusy(true);
-    try {
-      const data = await api(`/api/empresa/rewards/${id}/confirm`, {
-        method: "POST",
-      });
-      setSuccess(data.message || "Resgate confirmado.");
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (!ready || mode === "loading") {
     return (
@@ -1003,9 +995,9 @@ export default function EmpresaPage() {
             <span>
               <strong>{requests.length}</strong> solicitações
             </span>
-            <span>
-              <strong>{pendingRewards}</strong> resgates
-            </span>
+            <Link href="/empresa/resgates" className="emp-hero-stat-link">
+              <strong>{pendingRewards}</strong> resgates pendentes
+            </Link>
           </div>
         </div>
       </section>
@@ -1101,7 +1093,7 @@ export default function EmpresaPage() {
             </h2>
             <p className="muted">
               {formOpen
-                ? "Quatro passos: cidade, período, banner e prêmios."
+                ? "Três passos: período, banner e prêmios. Cidade no perfil."
                 : "Fluxo guiado — um passo de cada vez."}
             </p>
           </div>
@@ -1153,30 +1145,8 @@ export default function EmpresaPage() {
 
             <form className="emp-form" onSubmit={onSubmitSponsorship}>
               {sponsorStep === 1 ? (
-                <div className="emp-step-panel" data-tour="emp-step-city">
-                  <h3>1 · Cidade</h3>
-                  {hasCompanyCity ? (
-                    <>
-                      <p className="emp-city-fixed">
-                        Patrocínio só em{" "}
-                        <strong>{companyCityLabel}</strong>
-                        <span className="muted"> (fixa no perfil)</span>
-                      </p>
-                      <p className="hint">
-                        Não é possível escolher outra cidade nesta solicitação.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="form-error" role="alert">
-                      Defina a cidade no perfil acima antes de continuar.
-                    </p>
-                  )}
-                </div>
-              ) : null}
-
-              {sponsorStep === 2 ? (
-                <div className="emp-step-panel" data-tour="emp-step-period">
-                  <h3>2 · Período</h3>
+                <div className="emp-step-panel" data-tour="emp-slot">
+                  <h3>1 · Período</h3>
                   {editingId ? (
                     <p className="muted emp-edit-period-note">
                       Período bloqueado nesta edição —{" "}
@@ -1278,9 +1248,9 @@ export default function EmpresaPage() {
                 </div>
               ) : null}
 
-              {sponsorStep === 3 ? (
+              {sponsorStep === 2 ? (
                 <div className="emp-step-panel" data-tour="emp-step-banner">
-                  <h3>3 · Banner</h3>
+                  <h3>2 · Banner</h3>
                   <label className="emp-field" data-tour="emp-display-name">
                     Nome exibido (“Patrocinado por”)
                     <input
@@ -1376,9 +1346,9 @@ export default function EmpresaPage() {
                 </div>
               ) : null}
 
-              {sponsorStep === 4 ? (
+              {sponsorStep === 3 ? (
                 <div className="emp-step-panel" data-tour="emp-step-prizes">
-                  <h3>4 · Prêmios</h3>
+                  <h3>3 · Prêmios</h3>
                   <fieldset
                     className="emp-field emp-pos-fieldset"
                     data-tour="emp-prizes"
@@ -1619,7 +1589,7 @@ export default function EmpresaPage() {
                     Cancelar
                   </button>
                 )}
-                {sponsorStep < 4 ? (
+                {sponsorStep < 3 ? (
                   <button
                     type="button"
                     className="pill-cta"
@@ -1666,8 +1636,8 @@ export default function EmpresaPage() {
         )}
       </section>
 
-      {/* ——— Solicitações e resgates (secundário) ——— */}
-      <div className="emp-secondary">
+      {/* ——— Solicitações ——— */}
+      <div className="emp-secondary emp-secondary-solo">
         <section className="emp-panel reveal" data-tour="emp-requests">
           <header className="emp-panel-head">
             <h2>Minhas solicitações</h2>
@@ -1717,46 +1687,6 @@ export default function EmpresaPage() {
           )}
         </section>
 
-        <section className="emp-panel reveal" data-tour="emp-rewards">
-          <header className="emp-panel-head">
-            <h2>Resgates</h2>
-            <p className="muted emp-lead">
-              Pendente → você confirma → resgatado.
-            </p>
-          </header>
-          {rewards.length === 0 ? (
-            <p className="muted">Nenhum benefício a confirmar.</p>
-          ) : (
-            <ul className="emp-list">
-              {rewards.map((rw) => (
-                <li key={rw.id} className="emp-list-item emp-reward">
-                  <div>
-                    <strong>
-                      {rw.finalPosition}º · @{rw.username}
-                    </strong>
-                    <p className="muted">{rw.rankingTitle}</p>
-                    <p className="emp-reward-benefit">{rw.benefitText}</p>
-                  </div>
-                  <div className="emp-reward-actions">
-                    <span className={statusClass(rw.status)}>
-                      {rw.statusLabel}
-                    </span>
-                    {rw.status === "pending" ? (
-                      <button
-                        type="button"
-                        className="pill-cta sm"
-                        disabled={busy}
-                        onClick={() => onConfirmReward(rw.id)}
-                      >
-                        Confirmar resgate
-                      </button>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
     </main>
   );
