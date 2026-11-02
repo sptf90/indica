@@ -107,6 +107,7 @@ export default function EmpresaPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cities, setCities] = useState([]);
 
   // register form — CNPJ stored as digits only
   const [cnpjDigits, setCnpjDigits] = useState("");
@@ -114,7 +115,12 @@ export default function EmpresaPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [registerCityId, setRegisterCityId] = useState("");
   const [cnpjTouched, setCnpjTouched] = useState(false);
+
+  // perfil empresa (cidade de instalação)
+  const [profileCityId, setProfileCityId] = useState("");
+  const [profileLegalName, setProfileLegalName] = useState("");
 
   // sponsorship form
   const [slotModality, setSlotModality] = useState("weekly");
@@ -186,9 +192,15 @@ export default function EmpresaPage() {
       slotModality ||
       "weekly";
     const cityName =
-      editingRequest?.cityName || selectedSlot?.cityName || null;
+      editingRequest?.cityName ||
+      selectedSlot?.cityName ||
+      company?.cityName ||
+      null;
     const cityState =
-      editingRequest?.cityState || selectedSlot?.cityState || null;
+      editingRequest?.cityState ||
+      selectedSlot?.cityState ||
+      company?.cityState ||
+      null;
     const place = cityName
       ? `${cityName}${cityState ? `/${cityState}` : ""}`
       : "Sua cidade";
@@ -209,7 +221,9 @@ export default function EmpresaPage() {
     selectedSlot,
     slotModality,
     displayName,
-    company,
+    company?.cityName,
+    company?.cityState,
+    company?.legalName,
   ]);
 
   const topNParsed = useMemo(() => {
@@ -234,6 +248,12 @@ export default function EmpresaPage() {
     [rewards]
   );
 
+  const companyCityLabel = company?.cityName
+    ? `${company.cityName}${company.cityState ? `/${company.cityState}` : ""}`
+    : null;
+
+  const hasCompanyCity = Boolean(company?.cityId);
+
   useEffect(() => {
     if (!openSlots.length) {
       if (slotKey) setSlotKey("");
@@ -251,6 +271,12 @@ export default function EmpresaPage() {
     );
   }, [prizePositions]);
 
+  useEffect(() => {
+    api("/api/cities")
+      .then((data) => setCities(data.cities || []))
+      .catch(() => setCities([]));
+  }, []);
+
   const loadDashboard = useCallback(async () => {
     const [me, slotData, reqData, rewardData] = await Promise.all([
       api("/api/empresa"),
@@ -266,7 +292,11 @@ export default function EmpresaPage() {
     if (me.company?.legalName) {
       setDisplayName((prev) => prev || me.company.legalName);
       setLogoUrl((prev) => prev || me.company.logoUrl || "");
+      setProfileLegalName(me.company.legalName);
     }
+    setProfileCityId(
+      me.company?.cityId != null ? String(me.company.cityId) : ""
+    );
   }, []);
 
   useEffect(() => {
@@ -319,6 +349,10 @@ export default function EmpresaPage() {
       );
       return;
     }
+    if (!registerCityId) {
+      setError("Selecione a cidade onde a empresa está instalada.");
+      return;
+    }
     setBusy(true);
     try {
       await api("/api/auth/register-company", {
@@ -329,12 +363,57 @@ export default function EmpresaPage() {
           email,
           password,
           logoUrl: logoUrl.trim() || null,
+          cityId: Number(registerCityId),
         }),
       });
       await loadDashboard();
       setMode("dashboard");
-      setSuccess("Conta empresarial criada. Sem pedir nem indicar — só patrocínio.");
+      setSuccess(
+        "Conta empresarial criada. Patrocínio só na cidade da empresa."
+      );
       router.refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveProfile(event) {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!profileCityId) {
+      setError("Selecione a cidade onde a empresa está instalada.");
+      return;
+    }
+    if (!profileLegalName || profileLegalName.trim().length < 2) {
+      setError("Razão social obrigatória.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await api("/api/empresa", {
+        method: "PATCH",
+        body: JSON.stringify({
+          legalName: profileLegalName.trim(),
+          cityId: Number(profileCityId),
+          logoUrl: logoUrl.trim() || company?.logoUrl || null,
+        }),
+      });
+      setCompany(data.company);
+      setProfileCityId(
+        data.company?.cityId != null ? String(data.company.cityId) : ""
+      );
+      setProfileLegalName(data.company?.legalName || "");
+      if (data.company?.legalName) {
+        setDisplayName((prev) => prev || data.company.legalName);
+      }
+      const slotData = await api("/api/empresa/slots");
+      setSlots(slotData.items || []);
+      setSuccess(
+        "Perfil atualizado. Só aparecem períodos da sua cidade de instalação."
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -757,6 +836,24 @@ export default function EmpresaPage() {
                 />
               </label>
               <label className="emp-field">
+                Cidade de instalação
+                <select
+                  value={registerCityId}
+                  onChange={(e) => setRegisterCityId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {cities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">
+                  Patrocínio só nesta cidade — não em outras.
+                </span>
+              </label>
+              <label className="emp-field">
                 E-mail de acesso
                 <input
                   type="email"
@@ -792,7 +889,7 @@ export default function EmpresaPage() {
               <button
                 className="pill-cta"
                 type="submit"
-                disabled={busy || !cnpjOk}
+                disabled={busy || !cnpjOk || !registerCityId}
               >
                 {busy ? "Cadastrando…" : "Criar conta empresarial"}
               </button>
@@ -817,12 +914,20 @@ export default function EmpresaPage() {
           <h1>{company?.legalName || "Empresa"}</h1>
           <p className="lead emp-hero-lead">
             Patrocínio e resgates da própria campanha — sem pedir nem indicar.
+            {companyCityLabel
+              ? ` Instalada em ${companyCityLabel}.`
+              : " Defina a cidade de instalação no perfil."}
           </p>
         </div>
         <div className="emp-hero-meta">
           <span className="emp-cnpj-badge" title="CNPJ">
             {cnpjDisplay}
           </span>
+          {companyCityLabel ? (
+            <span className="emp-cnpj-badge" title="Cidade">
+              {companyCityLabel}
+            </span>
+          ) : null}
           <div className="emp-hero-stats">
             <span>
               <strong>{requests.length}</strong> solicitações
@@ -847,6 +952,55 @@ export default function EmpresaPage() {
 
       <div className="emp-dashboard">
         <section
+          className="emp-panel reveal"
+          data-tour="emp-profile"
+        >
+          <header className="emp-panel-head">
+            <h2>Perfil da empresa</h2>
+            <p className="muted emp-lead">
+              Cidade de instalação obrigatória — só pode patrocinar rankings
+              nessa cidade.
+            </p>
+          </header>
+          <form className="emp-form" onSubmit={onSaveProfile}>
+            <div className="emp-form-grid">
+              <label className="emp-field">
+                Razão social
+                <input
+                  value={profileLegalName}
+                  onChange={(e) => setProfileLegalName(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="emp-field">
+                Cidade de instalação
+                <select
+                  value={profileCityId}
+                  onChange={(e) => setProfileCityId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {cities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="toolbar emp-toolbar">
+              <button
+                className="pill-cta"
+                type="submit"
+                disabled={busy || !profileCityId}
+              >
+                {busy ? "Salvando…" : "Salvar perfil"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section
           className="emp-panel emp-panel-sponsor reveal"
           data-tour="emp-sponsor-form"
         >
@@ -859,7 +1013,9 @@ export default function EmpresaPage() {
             <p className="muted emp-lead">
               {editingId
                 ? "Corriga campos e banner enquanto o ranking ainda não começou. Guardar sincroniza a campanha se já estiver aprovada."
-                : "Períodos do sistema, até 3 dias antes do início (23h59). Enviar ≠ publicar. Banner obrigatório."}
+                : hasCompanyCity
+                  ? `Só períodos em ${companyCityLabel}. Até 3 dias antes do início (23h59). Banner obrigatório.`
+                  : "Defina a cidade no perfil acima para ver períodos disponíveis."}
             </p>
           </header>
           <form className="emp-form" onSubmit={onSubmitSponsorship}>
@@ -869,7 +1025,17 @@ export default function EmpresaPage() {
                 className="emp-field emp-field-span emp-slot-fieldset"
                 data-tour="emp-slot"
               >
-                <legend>Período disponível</legend>
+                <legend>
+                  Período disponível
+                  {companyCityLabel ? ` · ${companyCityLabel}` : ""}
+                </legend>
+                {!hasCompanyCity ? (
+                  <p className="muted emp-slot-empty" role="status">
+                    Sem cidade no perfil — salve a cidade de instalação para
+                    liberar slots locais.
+                  </p>
+                ) : (
+                <>
                 <div
                   className="emp-modality-tabs"
                   role="tablist"
@@ -906,14 +1072,14 @@ export default function EmpresaPage() {
                 {slotsByModality.length === 0 ? (
                   <p className="muted emp-slot-empty">
                     Nenhum período{" "}
-                    {slotModality === "weekly" ? "semanal" : "mensal"} aberto
-                    agora.
+                    {slotModality === "weekly" ? "semanal" : "mensal"} aberto em{" "}
+                    {companyCityLabel} agora.
                   </p>
                 ) : (
                   <div
                     className="emp-slot-list"
                     role="radiogroup"
-                    aria-label="Cidade e datas"
+                    aria-label={`Períodos em ${companyCityLabel}`}
                   >
                     {slotsByModality.map((s) => {
                       const selected = s.key === slotKey;
@@ -947,6 +1113,8 @@ export default function EmpresaPage() {
                       );
                     })}
                   </div>
+                )}
+                </>
                 )}
               </fieldset>
               ) : (
@@ -1342,7 +1510,7 @@ export default function EmpresaPage() {
                 disabled={
                   busy ||
                   bannerUploading ||
-                  (!editingId && !openSlots.length) ||
+                  (!editingId && (!hasCompanyCity || !openSlots.length)) ||
                   !topNValid ||
                   !bannerUrl
                 }
@@ -1370,8 +1538,14 @@ export default function EmpresaPage() {
                   Carregue o banner {SPONSOR_BANNER_UPLOAD.label} para liberar o
                   envio.
                 </p>
+              ) : !editingId && !hasCompanyCity ? (
+                <p className="muted">
+                  Defina a cidade no perfil para solicitar patrocínio local.
+                </p>
               ) : !editingId && !openSlots.length ? (
-                <p className="muted">Nenhum período aberto no momento.</p>
+                <p className="muted">
+                  Nenhum período aberto em {companyCityLabel} no momento.
+                </p>
               ) : null}
             </div>
           </form>

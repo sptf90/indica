@@ -27,6 +27,7 @@ export async function POST(request) {
   const password = String(body.password || "");
   const legalName = String(body.legalName || "").trim();
   const logoUrl = String(body.logoUrl || "").trim() || null;
+  const cityId = Number(body.cityId);
   const cnpj = normalizeCnpj(body.cnpj);
 
   const errors = validateCompanyRegisterInput({
@@ -34,15 +35,24 @@ export async function POST(request) {
     password,
     cnpj,
     legalName,
+    cityId,
   });
   if (errors.length) return jsonError(errors[0], 400, { errors });
   if (!validateCnpj(cnpj)) {
     return jsonError("CNPJ inválido.");
   }
 
+  const pool = getPool();
+  const [cityRows] = await pool.query(
+    `SELECT id, name, state FROM cities WHERE id = ? LIMIT 1`,
+    [cityId]
+  );
+  if (!cityRows[0]) {
+    return jsonError("Cidade inválida.");
+  }
+
   const username = companyUsernameFromCnpj(cnpj);
   const passwordHash = await hashPassword(password);
-  const pool = getPool();
   const conn = await pool.getConnection();
 
   try {
@@ -55,9 +65,9 @@ export async function POST(request) {
     const userId = userResult.insertId;
     try {
       await conn.query(
-        `INSERT INTO companies (user_id, cnpj, legal_name, logo_url)
-         VALUES (?, ?, ?, ?)`,
-        [userId, cnpj, legalName, logoUrl]
+        `INSERT INTO companies (user_id, cnpj, legal_name, logo_url, city_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        [userId, cnpj, legalName, logoUrl, cityId]
       );
     } catch (error) {
       if (error?.code === "ER_DUP_ENTRY") {
@@ -75,6 +85,9 @@ export async function POST(request) {
           cnpj,
           legalName,
           logoUrl,
+          cityId,
+          cityName: cityRows[0].name,
+          cityState: cityRows[0].state,
         },
       },
       { status: 201 }

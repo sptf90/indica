@@ -48,11 +48,14 @@ CREATE TABLE IF NOT EXISTS companies (
   cnpj CHAR(14) NOT NULL,
   legal_name VARCHAR(255) NULL,
   logo_url VARCHAR(500) NULL,
+  city_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_companies_cnpj (cnpj),
   UNIQUE KEY uq_companies_user (user_id),
-  CONSTRAINT fk_companies_user FOREIGN KEY (user_id) REFERENCES users (id)
+  KEY idx_companies_city (city_id),
+  CONSTRAINT fk_companies_user FOREIGN KEY (user_id) REFERENCES users (id),
+  CONSTRAINT fk_companies_city FOREIGN KEY (city_id) REFERENCES cities (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS requests (

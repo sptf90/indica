@@ -54,17 +54,38 @@ export async function PATCH(request) {
         ? String(body.logoUrl || "").trim() || null
         : company.logo_url;
 
+    let cityId = company.city_id;
+    if (body.cityId !== undefined) {
+      cityId = Number(body.cityId);
+      if (!cityId || Number.isNaN(cityId)) {
+        return jsonError("Cidade obrigatória (onde a empresa está instalada).");
+      }
+      const poolCheck = getPool();
+      const [cityRows] = await poolCheck.query(
+        `SELECT id FROM cities WHERE id = ? LIMIT 1`,
+        [cityId]
+      );
+      if (!cityRows[0]) return jsonError("Cidade inválida.");
+    }
+
     if (!legalName || legalName.length < 2) {
       return jsonError("Razão social obrigatória.");
+    }
+    if (!cityId) {
+      return jsonError("Cidade obrigatória (onde a empresa está instalada).");
     }
 
     const pool = getPool();
     await pool.query(
-      `UPDATE companies SET legal_name = ?, logo_url = ? WHERE id = ?`,
-      [legalName, logoUrl, company.id]
+      `UPDATE companies SET legal_name = ?, logo_url = ?, city_id = ? WHERE id = ?`,
+      [legalName, logoUrl, cityId, company.id]
     );
     const [rows] = await pool.query(
-      `SELECT * FROM companies WHERE id = ? LIMIT 1`,
+      `SELECT co.*, c.name AS city_name, c.state AS city_state
+       FROM companies co
+       LEFT JOIN cities c ON c.id = co.city_id
+       WHERE co.id = ?
+       LIMIT 1`,
       [company.id]
     );
     return Response.json({
