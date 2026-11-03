@@ -68,14 +68,21 @@ async function seedCompanyDemo(connection) {
   const userId = users[0]?.id;
   if (!userId) return { ok: false };
 
+  // Ranking final demo (RJ mensal passado) com recompensas Pendente/Resgatado/Expirado
+  const [rj] = await connection.query(
+    `SELECT id, name, state FROM cities WHERE slug = 'rio-de-janeiro-rj' LIMIT 1`
+  );
+  const city = rj[0];
+
   await connection.query(
-    `INSERT INTO companies (user_id, cnpj, legal_name, logo_url)
-     VALUES (?, ?, 'Café Demo GoIndica Ltda', ?)
+    `INSERT INTO companies (user_id, cnpj, legal_name, logo_url, city_id)
+     VALUES (?, ?, 'Café Demo GoIndica Ltda', ?, ?)
      ON DUPLICATE KEY UPDATE
        user_id = VALUES(user_id),
        legal_name = VALUES(legal_name),
-       logo_url = VALUES(logo_url)`,
-    [userId, cnpj, logoUrl]
+       logo_url = VALUES(logo_url),
+       city_id = COALESCE(VALUES(city_id), city_id)`,
+    [userId, cnpj, logoUrl, city?.id || null]
   );
 
   const [companies] = await connection.query(
@@ -91,11 +98,6 @@ async function seedCompanyDemo(connection) {
     [userId, companyId]
   );
 
-  // Ranking final demo (RJ mensal passado) com recompensas Pendente/Resgatado/Expirado
-  const [rj] = await connection.query(
-    `SELECT id, name, state FROM cities WHERE slug = 'rio-de-janeiro-rj' LIMIT 1`
-  );
-  const city = rj[0];
   if (!city) return { ok: true, userId, companyId, rewards: 0 };
 
   const now = new Date();
