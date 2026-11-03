@@ -6821,6 +6821,12 @@ main.page.page-empresa {
   min-height: 4.5rem;
 }
 
+.emp-field-hint {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .emp-field-span {
   grid-column: 1 / -1;
 }
@@ -8997,8 +9003,21 @@ main.page.page-ranking-mensal {
   color: #fff;
   font-size: 0.84rem;
   font-weight: 700;
-  cursor: default;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
   user-select: none;
+}
+
+a.rm-sponsor-cta:hover,
+a.rm-sponsor-cta:focus-visible {
+  filter: brightness(1.05);
+  color: #fff;
+}
+
+.rm-sponsor-cta.is-disabled {
+  cursor: default;
+  opacity: 0.72;
 }
 
 .rm-sponsor-support.is-placeholder .rm-sponsor-cta {

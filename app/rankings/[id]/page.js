@@ -345,6 +345,35 @@ function SponsorSupportCard({ ranking }) {
 
   const name = ranking.sponsorName;
   const productSrc = ranking.sponsorProductUrl || SPONSOR_PRODUCT;
+  const siteHref = ranking.sponsorSiteUrl || null;
+  const ctaIcon = (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M14 4h6v6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10 14 20 4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
   return (
     <aside className="rm-side-card rm-sponsor-support">
       <h2>Este ranking tem o apoio de {name}</h2>
@@ -374,35 +403,22 @@ function SponsorSupportCard({ ranking }) {
           <span className="rm-sponsor-wordmark">{name}</span>
         )}
       </div>
-      <span className="rm-sponsor-cta" role="text">
-        Conhecer {name}
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden
+      {siteHref ? (
+        <a
+          className="rm-sponsor-cta"
+          href={siteHref}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <path
-            d="M14 4h6v6"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-          />
-          <path
-            d="M10 14 20 4"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-          />
-          <path
-            d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-          />
-        </svg>
-      </span>
+          Conhecer {name}
+          {ctaIcon}
+        </a>
+      ) : (
+        <span className="rm-sponsor-cta is-disabled" role="text">
+          Conhecer {name}
+          {ctaIcon}
+        </span>
+      )}
     </aside>
   );
 }

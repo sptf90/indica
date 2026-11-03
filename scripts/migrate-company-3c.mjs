@@ -248,10 +248,10 @@ async function seedCompanyDemo(connection) {
   await connection.query(
     `INSERT INTO sponsorship_requests
       (company_id, city_id, modality, period_start, period_end,
-       display_name, logo_url, regulation_text,
+       display_name, logo_url, site_url, regulation_text,
        prize_positions_json, prize_benefit_mode, prize_benefits_json,
        prize_redemption_instructions, redemption_deadline_days, status)
-     SELECT ?, ?, 'weekly', ?, ?, 'Café Demo', ?,
+     SELECT ?, ?, 'weekly', ?, ?, 'Café Demo', ?, 'https://www.cafedemo.example',
             'Regulamento demo: solicitação enviada, aguardando análise.',
             ?, 'equal', ?,
             ?, 30, 'submitted'

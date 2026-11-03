@@ -158,11 +158,13 @@ async function seedSponsoredDemo(connection) {
   const instructions =
     "Após o resultado final, apresente este benefício no balcão do Café Demo com documento. O resgate é confirmado pela empresa patrocinadora (sem botão de confirmação no app).";
 
+  const siteUrl = "https://www.cafedemo.example";
   const [upd] = await connection.query(
     `UPDATE rankings
      SET sponsor_company_id = ?,
          sponsor_display_name = ?,
          sponsor_logo_url = ?,
+         sponsor_site_url = ?,
          prize_positions_json = ?,
          prize_benefit_mode = 'equal',
          prize_benefits_json = ?,
@@ -177,6 +179,7 @@ async function seedSponsoredDemo(connection) {
           company.id,
           "Café Demo",
           logoUrl,
+          siteUrl,
           prizePositions,
           prizeBenefits,
           instructions,
@@ -187,6 +190,7 @@ async function seedSponsoredDemo(connection) {
           company.id,
           "Café Demo",
           logoUrl,
+          siteUrl,
           prizePositions,
           prizeBenefits,
           instructions,

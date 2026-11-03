@@ -141,6 +141,7 @@ export default function EmpresaPage() {
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState("");
   const [bannerMeta, setBannerMeta] = useState(null);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [siteUrl, setSiteUrl] = useState("");
   const [editingId, setEditingId] = useState(null);
   /** Nova solicitação aberta (sem editingId). */
   const [isComposing, setIsComposing] = useState(false);
@@ -273,7 +274,11 @@ export default function EmpresaPage() {
       return Boolean(editingId) || Boolean(selectedSlot);
     }
     if (step === 2) {
-      return Boolean(displayName.trim()) && Boolean(bannerUrl.trim());
+      return (
+        Boolean(displayName.trim()) &&
+        Boolean(siteUrl.trim()) &&
+        Boolean(bannerUrl.trim())
+      );
     }
     return true;
   }
@@ -289,11 +294,15 @@ export default function EmpresaPage() {
           setError("Selecione um período disponível.");
         }
       } else if (sponsorStep === 2) {
-        setError(
-          bannerUrl.trim()
-            ? "Informe o nome exibido."
-            : `Banner obrigatório — carregue a arte ${SPONSOR_BANNER_UPLOAD.label}.`
-        );
+        if (!displayName.trim()) {
+          setError("Informe o nome exibido.");
+        } else if (!siteUrl.trim()) {
+          setError("Informe o site/URL (botão Conhecer no ranking).");
+        } else {
+          setError(
+            `Banner obrigatório — carregue a arte ${SPONSOR_BANNER_UPLOAD.label}.`
+          );
+        }
       }
       return;
     }
@@ -690,6 +699,7 @@ export default function EmpresaPage() {
     setTopNInput("3");
     setBenefitMode("equal");
     setDeadlineDays("30");
+    setSiteUrl("");
     clearBanner();
     setEditingId(null);
     setIsComposing(false);
@@ -703,6 +713,7 @@ export default function EmpresaPage() {
     setEditingId(r.id);
     setDisplayName(r.displayName || company?.legalName || "");
     setLogoUrl(r.logoUrl || company?.logoUrl || "");
+    setSiteUrl(r.siteUrl || "");
     setRegulationText(r.regulationText || "");
     setInstructions(r.prizeRedemptionInstructions || "");
     setDeadlineDays(String(r.redemptionDeadlineDays || 30));
@@ -808,6 +819,7 @@ export default function EmpresaPage() {
         displayName: displayName.trim(),
         logoUrl: logoUrl.trim() || company?.logoUrl || null,
         bannerUrl: bannerUrl.trim(),
+        siteUrl: siteUrl.trim(),
         regulationText: regulationText.trim(),
         prizePositions: positions,
         prizeBenefitMode: benefitMode,
@@ -1297,6 +1309,23 @@ export default function EmpresaPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
                     />
+                  </label>
+
+                  <label className="emp-field" data-tour="emp-site-url">
+                    Site / URL
+                    <input
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
+                      placeholder="https://www.suaempresa.com.br"
+                      value={siteUrl}
+                      onChange={(e) => setSiteUrl(e.target.value)}
+                      required
+                    />
+                    <span className="emp-field-hint muted">
+                      Link do botão «Conhecer{" "}
+                      {displayName.trim() || "sua marca"}» no ranking.
+                    </span>
                   </label>
 
                   <div className="emp-banner-field" data-tour="emp-banner">
