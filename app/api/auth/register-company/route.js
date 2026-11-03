@@ -46,6 +46,9 @@ export async function POST(request) {
     convertExisting: converting,
   });
   if (errors.length) return jsonError(errors[0], 400, { errors });
+  if (logoUrl && logoUrl.length > 500) {
+    return jsonError("URL do logotipo deve ter no máximo 500 caracteres.");
+  }
   if (!validateCnpj(cnpj)) {
     return jsonError("CNPJ inválido.");
   }
@@ -138,7 +141,23 @@ export async function POST(request) {
     if (error?.code === "ER_DUP_ENTRY") {
       return jsonError("E-mail ou CNPJ já cadastrado.", 409);
     }
-    throw error;
+    if (error?.code === "ER_DATA_TOO_LONG") {
+      return jsonError(
+        "Dados longos demais (razão social até 255 caracteres; logo até 500).",
+        400
+      );
+    }
+    if (error?.code === "ER_BAD_FIELD_ERROR") {
+      return jsonError(
+        "Schema desatualizado — rode npm run db:migrate (companies.city_id).",
+        503
+      );
+    }
+    console.error("[register-company]", error?.code || error);
+    return jsonError(
+      error?.sqlMessage || error?.message || "Falha ao criar conta empresarial.",
+      500
+    );
   } finally {
     conn.release();
   }
