@@ -163,9 +163,9 @@ async function seedSponsoredDemo(connection) {
      SET sponsor_company_id = ?,
          sponsor_display_name = ?,
          sponsor_logo_url = ?,
-         prize_positions_json = CAST(? AS JSON),
+         prize_positions_json = ?,
          prize_benefit_mode = 'equal',
-         prize_benefits_json = CAST(? AS JSON),
+         prize_benefits_json = ?,
          prize_redemption_instructions = ?,
          title = ?
      WHERE modality = 'weekly'
@@ -204,7 +204,7 @@ async function seedSponsoredDemo(connection) {
        sponsor_company_id, sponsor_display_name, sponsor_logo_url,
        prize_positions_json, prize_benefit_mode, prize_benefits_json,
        prize_redemption_instructions)
-     VALUES (?, 'weekly', ?, ?, 'open', ?, ?, ?, ?, CAST(? AS JSON), 'equal', CAST(? AS JSON), ?)`,
+     VALUES (?, 'weekly', ?, ?, 'open', ?, ?, ?, ?, ?, 'equal', ?, ?)`,
     [
       cityId,
       toMysqlDatetime(next.start),

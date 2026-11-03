@@ -41,9 +41,15 @@ const NAV_COMPANY = [
   },
 ];
 
-/** Admin: patrocínios + gestão de rankings (mensal/semanal). */
+/** Admin: hub + patrocínios + gestão de rankings (mensal/semanal). */
 const NAV_ADMIN = [
-  { href: "/admin", label: "Patrocínios", icon: "shield", exact: true },
+  { href: "/admin", label: "Início", icon: "home", exact: true },
+  {
+    href: "/admin/patrocinios",
+    label: "Patrocínios",
+    icon: "shield",
+    exact: true,
+  },
   {
     href: "/admin/rankings",
     label: "Rankings",
@@ -459,7 +465,13 @@ export default function AppShell({ children }) {
                 ) : isAdmin ? (
                   <>
                     <Link href="/admin" onClick={() => setMenuOpen(false)}>
-                      Admin patrocínio
+                      Gestão admin
+                    </Link>
+                    <Link
+                      href="/admin/patrocinios"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Patrocínios
                     </Link>
                     <Link href="/perfil" onClick={() => setMenuOpen(false)}>
                       Meu perfil
