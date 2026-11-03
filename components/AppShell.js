@@ -209,16 +209,24 @@ export default function AppShell({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled) setUser(data?.user || null);
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
-      });
+    function loadMe() {
+      fetch("/api/auth/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!cancelled) setUser(data?.user || null);
+        })
+        .catch(() => {
+          if (!cancelled) setUser(null);
+        });
+    }
+    loadMe();
+    function onAuthChanged() {
+      loadMe();
+    }
+    window.addEventListener("goindica:auth-changed", onAuthChanged);
     return () => {
       cancelled = true;
+      window.removeEventListener("goindica:auth-changed", onAuthChanged);
     };
   }, [pathname]);
 

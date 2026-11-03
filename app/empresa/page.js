@@ -438,6 +438,19 @@ export default function EmpresaPage() {
       setError("Selecione a cidade onde a empresa está instalada.");
       return;
     }
+    const name = String(legalName || "").trim();
+    if (name.length < 2) {
+      setError("Razão social obrigatória.");
+      return;
+    }
+    if (name.length > 255) {
+      setError("Razão social deve ter no máximo 255 caracteres.");
+      return;
+    }
+    if (logoUrl.trim().length > 500) {
+      setError("URL do logotipo deve ter no máximo 500 caracteres.");
+      return;
+    }
     const converting = Boolean(user && !user.isCompany);
     if (!converting) {
       if (!email.trim()) {
@@ -453,7 +466,7 @@ export default function EmpresaPage() {
     try {
       const payload = {
         cnpj: cnpjDigits,
-        legalName,
+        legalName: name,
         logoUrl: logoUrl.trim() || null,
         cityId: Number(registerCityId),
       };
@@ -466,6 +479,9 @@ export default function EmpresaPage() {
         body: JSON.stringify(payload),
       });
       setUser(data.user || null);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("goindica:auth-changed"));
+      }
       await loadDashboard();
       setMode("dashboard");
       setSuccess(
