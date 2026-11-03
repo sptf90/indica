@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import GuestLanding from "@/components/GuestLanding";
 import ReputationBadge from "@/components/ReputationBadge";
@@ -484,6 +485,7 @@ function DashboardHome({ user }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [user, setUser] = useState(undefined);
   const [error, setError] = useState("");
 
@@ -498,6 +500,17 @@ export default function HomePage() {
         }
       });
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.isAdmin) {
+      router.replace("/admin");
+      return;
+    }
+    if (user.isCompany) {
+      router.replace("/empresa");
+    }
+  }, [user, router]);
 
   if (user === undefined) {
     return (
@@ -519,5 +532,12 @@ export default function HomePage() {
   }
 
   if (!user) return <GuestLanding />;
+  if (user.isAdmin || user.isCompany) {
+    return (
+      <main className="page">
+        <p className="muted">Redirecionando…</p>
+      </main>
+    );
+  }
   return <DashboardHome user={user} />;
 }
