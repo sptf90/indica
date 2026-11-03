@@ -380,6 +380,9 @@ export default function EmpresaPage() {
         if (cancelled) return;
         if (!me.user?.isCompany) {
           setUser(me.user);
+          if (me.user?.cityId != null) {
+            setRegisterCityId(String(me.user.cityId));
+          }
           setMode("guest-register");
           setReady(true);
           return;
@@ -426,23 +429,40 @@ export default function EmpresaPage() {
       setError("Selecione a cidade onde a empresa está instalada.");
       return;
     }
+    const converting = Boolean(user && !user.isCompany);
+    if (!converting) {
+      if (!email.trim()) {
+        setError("E-mail obrigatório.");
+        return;
+      }
+      if (!password || password.length < 6) {
+        setError("Senha deve ter entre 6 e 128 dígitos.");
+        return;
+      }
+    }
     setBusy(true);
     try {
-      await api("/api/auth/register-company", {
+      const payload = {
+        cnpj: cnpjDigits,
+        legalName,
+        logoUrl: logoUrl.trim() || null,
+        cityId: Number(registerCityId),
+      };
+      if (!converting) {
+        payload.email = email;
+        payload.password = password;
+      }
+      const data = await api("/api/auth/register-company", {
         method: "POST",
-        body: JSON.stringify({
-          cnpj: cnpjDigits,
-          legalName,
-          email,
-          password,
-          logoUrl: logoUrl.trim() || null,
-          cityId: Number(registerCityId),
-        }),
+        body: JSON.stringify(payload),
       });
+      setUser(data.user || null);
       await loadDashboard();
       setMode("dashboard");
       setSuccess(
-        "Conta empresarial criada. Patrocínio só na cidade da empresa."
+        converting
+          ? `Conta convertida. Continue com o mesmo login (@${data.user?.username || user.username}). Patrocínio só na cidade da empresa.`
+          : "Conta empresarial criada. Patrocínio só na cidade da empresa."
       );
       router.refresh();
     } catch (err) {
@@ -835,24 +855,27 @@ export default function EmpresaPage() {
   }
 
   if (mode === "guest-register") {
+    const converting = Boolean(user && !user.isCompany);
     return (
       <main className="page page-empresa">
         <section className="emp-hero emp-hero-register reveal">
           <div>
             <p className="eyebrow">Conta empresarial</p>
-            <h1>Cadastro por CNPJ</h1>
+            <h1>{converting ? "Virar conta empresarial" : "Cadastro por CNPJ"}</h1>
             <p className="lead emp-hero-lead">
-              Só para patrocinar rankings e confirmar resgates. Sem perfil
-              público, sem catálogo e sem pedir ou indicar.
+              {converting
+                ? `Sua conta @${user.username} deixa de ser pessoa e passa a ser empresa — mesmo login e senha. Só patrocínio e resgates.`
+                : "Só para patrocinar rankings e confirmar resgates. Sem perfil público, sem catálogo e sem pedir ou indicar."}
             </p>
           </div>
         </section>
 
         <section className="emp-panel reveal">
-          {user && !user.isCompany ? (
-            <p className="form-error" role="alert">
-              Você está logado como usuário comum. Saia e cadastre a empresa
-              com outro e-mail, ou use uma conta empresarial existente.
+          {converting ? (
+            <p className="form-success" role="status">
+              Logado como <strong>@{user.username}</strong>
+              {user.email ? ` (${user.email})` : ""}. Não criamos conta nova —
+              convertemos esta.
             </p>
           ) : null}
           {error ? (
@@ -919,29 +942,33 @@ export default function EmpresaPage() {
                   Patrocínio só nesta cidade — não em outras.
                 </span>
               </label>
-              <label className="emp-field">
-                E-mail de acesso
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="emp-field">
-                Senha
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]+"
-                  value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value.replace(/\D/g, ""))
-                  }
-                  placeholder="Só números · mín. 6"
-                  required
-                />
-              </label>
+              {!converting ? (
+                <>
+                  <label className="emp-field">
+                    E-mail de acesso
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="emp-field">
+                    Senha
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      pattern="[0-9]+"
+                      value={password}
+                      onChange={(e) =>
+                        setPassword(e.target.value.replace(/\D/g, ""))
+                      }
+                      placeholder="Só números · mín. 6"
+                      required
+                    />
+                  </label>
+                </>
+              ) : null}
               <label className="emp-field emp-field-span">
                 URL do logotipo (opcional)
                 <input
@@ -957,11 +984,23 @@ export default function EmpresaPage() {
                 type="submit"
                 disabled={busy || !cnpjOk || !registerCityId}
               >
-                {busy ? "Cadastrando…" : "Criar conta empresarial"}
+                {busy
+                  ? converting
+                    ? "Convertendo…"
+                    : "Cadastrando…"
+                  : converting
+                    ? "Converter esta conta"
+                    : "Criar conta empresarial"}
               </button>
-              <Link className="pill-outline" href="/login">
-                Já tenho conta
-              </Link>
+              {!converting ? (
+                <Link className="pill-outline" href="/login">
+                  Já tenho conta pessoa
+                </Link>
+              ) : (
+                <Link className="pill-outline" href="/">
+                  Voltar
+                </Link>
+              )}
             </div>
           </form>
         </section>
