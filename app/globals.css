@@ -8581,6 +8581,29 @@ main.page.page-ranking-mensal {
   flex-shrink: 0;
 }
 
+/* Prévia: campanha aprovada antes do início — sem pódio/tabela. */
+.rm-preview-note {
+  background: var(--rm-card);
+  border: 1px solid rgba(236, 94, 39, 0.22);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 6px 18px rgba(28, 25, 23, 0.035);
+}
+
+.rm-preview-note h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 750;
+  color: var(--rm-ink);
+}
+
+.rm-preview-note p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--rm-muted);
+}
+
 .rm-podium-card,
 .rm-table-card,
 .rm-side-card {

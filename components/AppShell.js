@@ -246,6 +246,7 @@ export default function AppShell({ children }) {
   const isCompany = Boolean(user?.isCompany);
   const isAdmin = Boolean(user?.isAdmin);
   const NAV = isCompany ? NAV_COMPANY : isAdmin ? NAV_ADMIN : NAV_USER;
+  const homeHref = isAdmin ? "/admin" : isCompany ? "/empresa" : "/";
 
   if (user === undefined) {
     return (
@@ -302,7 +303,7 @@ export default function AppShell({ children }) {
       />
       <aside className={`sidebar${menuReady ? " ready" : ""}`} aria-label="Navegação">
         <Link
-          href="/"
+          href={homeHref}
           className="brand-mark sidebar-brand"
           data-tour="brand-logo"
         >
