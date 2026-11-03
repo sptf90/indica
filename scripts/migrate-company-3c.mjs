@@ -117,7 +117,7 @@ async function seedCompanyDemo(connection) {
        prize_redemption_instructions, prize_redemption_deadline_days,
        regulation_text)
      VALUES (?, 'monthly', ?, ?, 'final', ?, ?, 'Café Demo', ?,
-             CAST(? AS JSON), 'equal', CAST(? AS JSON), ?, 30, ?)
+             ?, 'equal', ?, ?, 30, ?)
      ON DUPLICATE KEY UPDATE
        status = 'final',
        sponsor_company_id = VALUES(sponsor_company_id),
@@ -251,7 +251,7 @@ async function seedCompanyDemo(connection) {
        prize_redemption_instructions, redemption_deadline_days, status)
      SELECT ?, ?, 'weekly', ?, ?, 'Café Demo', ?,
             'Regulamento demo: solicitação enviada, aguardando análise.',
-            CAST(? AS JSON), 'equal', CAST(? AS JSON),
+            ?, 'equal', ?,
             ?, 30, 'submitted'
      FROM DUAL
      WHERE NOT EXISTS (
