@@ -6200,6 +6200,21 @@ main.page.page-empresa {
   box-shadow: var(--shadow-soft);
 }
 
+.emp-hero-compact {
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+}
+
+.emp-hero-compact .emp-hero-main h1 {
+  font-size: clamp(1.2rem, 2.1vw, 1.45rem);
+  margin: 0.1rem 0 0.2rem;
+}
+
+.emp-hero-compact .emp-hero-lead {
+  font-size: 0.82rem;
+  max-width: 40ch;
+}
+
 .emp-hero-register {
   align-items: flex-start;
 }
@@ -6251,6 +6266,101 @@ main.page.page-empresa {
 .emp-hero-stats strong {
   color: var(--brand-deep);
   font-variant-numeric: tabular-nums;
+}
+
+/* Fluxo didático: 1 solicitações → 2 editar → 3 resgates */
+.emp-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.emp-flow-step {
+  padding: 0.85rem 1rem 1rem;
+  background: linear-gradient(165deg, #fff 0%, #fffaf6 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+}
+
+.emp-flow-step-form {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+}
+
+.emp-flow-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.55rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.emp-flow-num {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  margin-top: 0.05rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 1px 4px rgba(253, 83, 34, 0.28);
+}
+
+.emp-flow-head-text {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.emp-flow-head-text h2 {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.emp-flow-head-text .muted {
+  margin: 0.12rem 0 0;
+  font-size: 0.78rem;
+}
+
+.emp-flow-cta {
+  margin-left: auto;
+  align-self: center;
+}
+
+.emp-flow-badge {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: var(--brand);
+}
+
+.emp-flow-empty {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.emp-flow-empty strong {
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .emp-dashboard {
@@ -6305,10 +6415,10 @@ main.page.page-empresa {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.75rem 0.85rem;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem 0.75rem;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
   background:
     linear-gradient(135deg, rgba(253, 83, 34, 0.06), transparent 50%),
     #fff;
@@ -6448,6 +6558,8 @@ main.page.page-empresa {
 
 .emp-ranking-preview-hero {
   margin: 0;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .emp-ranking-preview-img {
@@ -6515,11 +6627,6 @@ main.page.page-empresa {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.35rem;
-}
-
-.emp-list-item.is-editing {
-  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
 .emp-edit-hint {
@@ -6889,6 +6996,16 @@ main.page.page-empresa {
   gap: 0;
 }
 
+.emp-list-dense .emp-list-item {
+  padding: 0.45rem 0;
+  font-size: 0.84rem;
+}
+
+.emp-list-main {
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
 .emp-list-item {
   display: flex;
   flex-wrap: wrap;
@@ -6908,6 +7025,14 @@ main.page.page-empresa {
 .emp-list-item .muted {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
+}
+
+.emp-list-item.is-editing {
+  margin: 0 -0.35rem;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 6%, #fff);
 }
 
 .emp-reward-benefit {
@@ -6956,6 +7081,11 @@ main.page.page-empresa {
 
   .emp-hero-meta {
     align-items: flex-start;
+  }
+
+  .emp-flow-cta,
+  .emp-flow-badge {
+    margin-left: 0;
   }
 }
 
