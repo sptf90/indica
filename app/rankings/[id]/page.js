@@ -36,6 +36,24 @@ function daysRemaining(periodEnd) {
   return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
 }
 
+function periodHasStarted(ranking) {
+  if (typeof ranking?.periodStarted === "boolean") return ranking.periodStarted;
+  const start = ranking?.periodStart ? new Date(ranking.periodStart) : null;
+  if (!start || Number.isNaN(start.getTime())) return true;
+  return Date.now() >= start.getTime();
+}
+
+function formatStartDay(periodStart) {
+  const s = periodStart ? new Date(periodStart) : null;
+  if (!s || Number.isNaN(s.getTime())) return null;
+  return s.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 function Avatar({ username, photoUrl, size = 36, className = "" }) {
   if (photoUrl) {
     return (
@@ -225,7 +243,29 @@ function Podium({ top3, highlightsLabel }) {
   );
 }
 
-function MyPositionCard({ me, enrolled, busy, onEnroll, canEnroll, status }) {
+function MyPositionCard({
+  me,
+  enrolled,
+  busy,
+  onEnroll,
+  canEnroll,
+  status,
+  periodStarted,
+  startLabel,
+}) {
+  if (!periodStarted) {
+    return (
+      <aside className="rm-side-card rm-my-pos">
+        <h2>Prévia da campanha</h2>
+        <p className="rm-side-lead">
+          {startLabel
+            ? `A classificação abre em ${startLabel}. Até lá, só a prévia do banner e da marca.`
+            : "A classificação abre no início do período. Até lá, só a prévia do banner e da marca."}
+        </p>
+      </aside>
+    );
+  }
+
   if (!enrolled && !me) {
     const isArchive = status === "final" || status === "tallying";
     return (
@@ -452,6 +492,8 @@ export default function RankingDetailPage() {
   const isWeekly = ranking.modality === "weekly";
   const highlightsLabel = isWeekly ? "Destaques da semana" : "Destaques do mês";
   const pointsColLabel = isWeekly ? "Pontos na semana" : "Pontos no mês";
+  const started = periodHasStarted(ranking);
+  const startLabel = formatStartDay(ranking.periodStart);
   const provisional =
     me?.provisionalMessage || prize?.provisionalMessage || null;
   const showFinalBenefit =
@@ -471,8 +513,9 @@ export default function RankingDetailPage() {
   const hasPrizes =
     Array.isArray(ranking.prizePositions) &&
     ranking.prizePositions.length > 0;
-  const statusBadge =
-    ranking.status === "open"
+  const statusBadge = !started
+    ? { label: "Prévia", tone: "info" }
+    : ranking.status === "open"
       ? { label: "Ativo", tone: "ok" }
       : ranking.status === "tallying"
         ? { label: "Em apuração", tone: "warn" }
@@ -506,25 +549,42 @@ export default function RankingDetailPage() {
             <div className="rm-meta-item" role="listitem">
               <MetaIcon name="clock" />
               <span>
-                {ranking.status === "final"
-                  ? "Período encerrado"
-                  : remaining == null
-                    ? "—"
-                    : remaining === 0
-                      ? "Encerra hoje"
-                      : `Faltam ${remaining} ${remaining === 1 ? "dia" : "dias"}`}
+                {!started
+                  ? startLabel
+                    ? `Começa em ${startLabel}`
+                    : "Ainda não começou"
+                  : ranking.status === "final"
+                    ? "Período encerrado"
+                    : remaining == null
+                      ? "—"
+                      : remaining === 0
+                        ? "Encerra hoje"
+                        : `Faltam ${remaining} ${remaining === 1 ? "dia" : "dias"}`}
               </span>
             </div>
-            <div className="rm-meta-item" role="listitem">
-              <MetaIcon name="people" />
-              <span>
-                {participants}{" "}
-                {participants === 1 ? "participante" : "participantes"}
-              </span>
-            </div>
+            {started ? (
+              <div className="rm-meta-item" role="listitem">
+                <MetaIcon name="people" />
+                <span>
+                  {participants}{" "}
+                  {participants === 1 ? "participante" : "participantes"}
+                </span>
+              </div>
+            ) : null}
           </div>
 
-          {provisional && ranking.status !== "final" ? (
+          {!started ? (
+            <section className="rm-preview-note" aria-label="Prévia da campanha">
+              <h2>Campanha ainda não começou</h2>
+              <p>
+                {startLabel
+                  ? `A classificação (pódio e tabela) fica disponível a partir de ${startLabel}. Até lá, confira o banner e a identificação da marca.`
+                  : "A classificação (pódio e tabela) fica disponível no início do período. Até lá, confira o banner e a identificação da marca."}
+              </p>
+            </section>
+          ) : null}
+
+          {started && provisional && ranking.status !== "final" ? (
             <p
               className={`ranking-prize-msg${
                 me?.inPrizeBand ? " in-band" : " out-band"
@@ -552,93 +612,97 @@ export default function RankingDetailPage() {
           {flash ? <p className="ok-box">{flash}</p> : null}
           {error ? <p className="error-box">{error}</p> : null}
 
-          <Podium top3={top3} highlightsLabel={highlightsLabel} />
+          {started ? (
+            <>
+              <Podium top3={top3} highlightsLabel={highlightsLabel} />
 
-          <section className="rm-table-card" aria-label="Classificação geral">
-            <div className="rm-table-head">
-              <h2>Classificação geral</h2>
-              <p className="muted">
-                Nome e foto informativos (não clicáveis).
-                {ranking.prizePositions?.length
-                  ? " Posições premiadas em destaque."
-                  : ""}{" "}
-                Empate: acessos pelo link → reputação.
-              </p>
-            </div>
+              <section className="rm-table-card" aria-label="Classificação geral">
+                <div className="rm-table-head">
+                  <h2>Classificação geral</h2>
+                  <p className="muted">
+                    Nome e foto informativos (não clicáveis).
+                    {ranking.prizePositions?.length
+                      ? " Posições premiadas em destaque."
+                      : ""}{" "}
+                    Empate: acessos pelo link → reputação.
+                  </p>
+                </div>
 
-            {standings.length === 0 ? (
-              <p className="muted">Ainda sem inscritos.</p>
-            ) : tableRows.length === 0 && top3.length > 0 ? (
-              <p className="muted">
-                A classificação geral completa os destaques acima.
-              </p>
-            ) : (
-              <div className="rm-table-wrap">
-                <table className="rm-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Posição</th>
-                      <th scope="col">Participante</th>
-                      <th
-                        scope="col"
-                        title="Desempate: acessos distintos pelo link de partilha"
-                      >
-                        {pointsColLabel}
-                      </th>
-                      <th scope="col">Indicações confirmadas</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableRows.map((row) => {
-                      const isMe = me && row.userId === me.userId;
-                      const tieTitle =
-                        row.shareVisitCount != null
-                          ? `Acessos pelo link: ${row.shareVisitCount}`
-                          : undefined;
-                      return (
-                        <tr
-                          key={row.userId}
-                          className={`${isMe ? "is-me" : ""}${
-                            row.isPrizePosition ? " is-prize" : ""
-                          }`.trim()}
-                          title={tieTitle}
-                          data-share-visits={row.shareVisitCount ?? 0}
-                        >
-                          <td className="rm-col-pos">
-                            {row.isPrizePosition ? (
-                              <span
-                                className="standing-prize-mark"
-                                title="Premiada"
-                              >
-                                ★
-                              </span>
-                            ) : null}
-                            {row.position}º
-                          </td>
-                          <td>
-                            <span className="standing-who">
-                              <Avatar
-                                username={row.username}
-                                photoUrl={row.photoUrl}
-                                size={32}
-                              />
-                              <span className="standing-name">
-                                {row.username}
-                              </span>
-                            </span>
-                          </td>
-                          <td className="rm-col-num">
-                            {row.points.toLocaleString("pt-BR")}
-                          </td>
-                          <td className="rm-col-num">{row.validCount}</td>
+                {standings.length === 0 ? (
+                  <p className="muted">Ainda sem inscritos.</p>
+                ) : tableRows.length === 0 && top3.length > 0 ? (
+                  <p className="muted">
+                    A classificação geral completa os destaques acima.
+                  </p>
+                ) : (
+                  <div className="rm-table-wrap">
+                    <table className="rm-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Posição</th>
+                          <th scope="col">Participante</th>
+                          <th
+                            scope="col"
+                            title="Desempate: acessos distintos pelo link de partilha"
+                          >
+                            {pointsColLabel}
+                          </th>
+                          <th scope="col">Indicações confirmadas</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+                      </thead>
+                      <tbody>
+                        {tableRows.map((row) => {
+                          const isMe = me && row.userId === me.userId;
+                          const tieTitle =
+                            row.shareVisitCount != null
+                              ? `Acessos pelo link: ${row.shareVisitCount}`
+                              : undefined;
+                          return (
+                            <tr
+                              key={row.userId}
+                              className={`${isMe ? "is-me" : ""}${
+                                row.isPrizePosition ? " is-prize" : ""
+                              }`.trim()}
+                              title={tieTitle}
+                              data-share-visits={row.shareVisitCount ?? 0}
+                            >
+                              <td className="rm-col-pos">
+                                {row.isPrizePosition ? (
+                                  <span
+                                    className="standing-prize-mark"
+                                    title="Premiada"
+                                  >
+                                    ★
+                                  </span>
+                                ) : null}
+                                {row.position}º
+                              </td>
+                              <td>
+                                <span className="standing-who">
+                                  <Avatar
+                                    username={row.username}
+                                    photoUrl={row.photoUrl}
+                                    size={32}
+                                  />
+                                  <span className="standing-name">
+                                    {row.username}
+                                  </span>
+                                </span>
+                              </td>
+                              <td className="rm-col-num">
+                                {row.points.toLocaleString("pt-BR")}
+                              </td>
+                              <td className="rm-col-num">{row.validCount}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </>
+          ) : null}
         </div>
 
         <aside className="rm-sidebar">
@@ -649,6 +713,8 @@ export default function RankingDetailPage() {
             onEnroll={enroll}
             canEnroll={ranking.acceptsEnrollment === true}
             status={ranking.effectiveStatus || ranking.status}
+            periodStarted={started}
+            startLabel={startLabel}
           />
           <SponsorSupportCard ranking={ranking} />
         </aside>

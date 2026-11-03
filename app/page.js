@@ -532,6 +532,7 @@ export default function HomePage() {
   }
 
   if (!user) return <GuestLanding />;
+
   if (user.isAdmin || user.isCompany) {
     return (
       <main className="page">
@@ -539,5 +540,6 @@ export default function HomePage() {
       </main>
     );
   }
+
   return <DashboardHome user={user} />;
 }

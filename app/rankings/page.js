@@ -41,8 +41,18 @@ function phaseStatus(ranking) {
   return ranking.effectiveStatus || ranking.status;
 }
 
+function periodHasStarted(ranking) {
+  if (typeof ranking?.periodStarted === "boolean") return ranking.periodStarted;
+  const start = ranking?.periodStart ? new Date(ranking.periodStart) : null;
+  if (!start || Number.isNaN(start.getTime())) return true;
+  return Date.now() >= start.getTime();
+}
+
 function statusBadgeFor(ranking) {
   const status = phaseStatus(ranking);
+  if (status === "open" && !periodHasStarted(ranking)) {
+    return { label: "Prévia", tone: "info" };
+  }
   if (status === "open") {
     return { label: "Ativo", tone: "ok" };
   }
@@ -289,7 +299,12 @@ function RankingsPageContent() {
     return items;
   }, [items, phase]);
 
-  const openItems = visibleItems.filter((r) => phaseStatus(r) === "open");
+  const previewItems = visibleItems.filter(
+    (r) => phaseStatus(r) === "open" && !periodHasStarted(r)
+  );
+  const openItems = visibleItems.filter(
+    (r) => phaseStatus(r) === "open" && periodHasStarted(r)
+  );
   const tallyingItems = visibleItems.filter(
     (r) => phaseStatus(r) === "tallying"
   );
@@ -318,6 +333,12 @@ function RankingsPageContent() {
 
   const sections = [
     { key: "open", title: "Ativos", list: openItems },
+    {
+      key: "preview",
+      title: "Prévia",
+      hint: "Campanha aprovada — classificação só após o início do período",
+      list: previewItems,
+    },
     {
       key: "tallying",
       title: "Em apuração",

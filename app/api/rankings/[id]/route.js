@@ -12,15 +12,18 @@ export async function GET(_request, { params }) {
     const rankingId = Number((await params).id);
     if (!rankingId) return jsonError("Ranking inválido.", 400);
 
-    const data = await getStandings(rankingId, { userId: user.id });
-    if (!data) return jsonError("Ranking não encontrado.", 404);
-
     const company = isCompanyAccount(user)
       ? await findCompanyByUserId(user.id)
       : null;
 
+    // Empresa: prévia da própria campanha antes do início (sem exigir visibilidade pública).
+    const data = await getStandings(rankingId, {
+      userId: user.id,
+      requireVisible: !company,
+    });
+    if (!data) return jsonError("Ranking não encontrado.", 404);
+
     const ranking = await getRankingById(rankingId, user.id, {
-      // Empresa pode ver a própria campanha antes do início do período.
       requireVisible: !company,
     });
     if (!ranking) return jsonError("Ranking não encontrado.", 404);
