@@ -21,10 +21,17 @@ const NAV_USER = [
 const NAV_COMPANY = [
   {
     href: "/empresa",
-    label: "Patrocínio e resgates",
+    label: "Patrocínio",
     icon: "gift",
     exact: true,
     tourId: "nav-empresa",
+  },
+  {
+    href: "/empresa/resgates",
+    label: "Resgates",
+    icon: "check",
+    exact: true,
+    tourId: "nav-empresa-resgates",
   },
   {
     href: "/rankings",
@@ -141,6 +148,13 @@ function NavIcon({ name }) {
           <path d="M3 12h18" />
           <path d="M12 8c-2-3-5-3-5-1s2 2 5 1Z" />
           <path d="M12 8c2-3 5-3 5-1s-2 2-5 1Z" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8.5 12.5 2.2 2.2 4.8-5" />
         </svg>
       );
     case "shield":

@@ -142,6 +142,11 @@ export default function EmpresaPage() {
   const [bannerMeta, setBannerMeta] = useState(null);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  /** Nova solicitação aberta (sem editingId). */
+  const [isComposing, setIsComposing] = useState(false);
+  /** Wizard: 1 período · 2 banner · 3 prêmios (cidade só no perfil) */
+  const [sponsorStep, setSponsorStep] = useState(1);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const cnpjMasked = useMemo(() => formatCnpj(cnpjDigits), [cnpjDigits]);
   const cnpjOk = useMemo(() => validateCnpj(cnpjDigits), [cnpjDigits]);
@@ -254,6 +259,73 @@ export default function EmpresaPage() {
 
   const hasCompanyCity = Boolean(company?.cityId);
 
+  const formOpen = Boolean(editingId) || isComposing;
+
+  const wizardSteps = [
+    { id: 1, label: "Período" },
+    { id: 2, label: "Banner" },
+    { id: 3, label: "Prêmios" },
+  ];
+
+  function canAdvanceFrom(step) {
+    if (step === 1) {
+      if (!hasCompanyCity) return false;
+      return Boolean(editingId) || Boolean(selectedSlot);
+    }
+    if (step === 2) {
+      return Boolean(displayName.trim()) && Boolean(bannerUrl.trim());
+    }
+    return true;
+  }
+
+  function goNextStep() {
+    setError("");
+    if (!canAdvanceFrom(sponsorStep)) {
+      if (sponsorStep === 1) {
+        if (!hasCompanyCity) {
+          setError("Defina a cidade de instalação no perfil da empresa.");
+          setProfileOpen(true);
+        } else {
+          setError("Selecione um período disponível.");
+        }
+      } else if (sponsorStep === 2) {
+        setError(
+          bannerUrl.trim()
+            ? "Informe o nome exibido."
+            : `Banner obrigatório — carregue a arte ${SPONSOR_BANNER_UPLOAD.label}.`
+        );
+      }
+      return;
+    }
+    setSponsorStep((s) => Math.min(3, s + 1));
+  }
+
+  function goPrevStep() {
+    setError("");
+    setSponsorStep((s) => Math.max(1, s - 1));
+  }
+
+  function startCompose() {
+    if (!hasCompanyCity) {
+      setError("Defina a cidade de instalação no perfil antes de solicitar.");
+      setProfileOpen(true);
+      return;
+    }
+    resetSponsorshipFormFields();
+    if (company?.legalName) setDisplayName(company.legalName);
+    setIsComposing(true);
+    setSponsorStep(1);
+    setError("");
+    setSuccess("");
+    try {
+      document
+        .querySelector('[data-tour="emp-sponsor-form"]')
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      /* ignore */
+    }
+  }
+
   useEffect(() => {
     if (!openSlots.length) {
       if (slotKey) setSlotKey("");
@@ -297,6 +369,7 @@ export default function EmpresaPage() {
     setProfileCityId(
       me.company?.cityId != null ? String(me.company.cityId) : ""
     );
+    setProfileOpen(!me.company?.cityId);
   }, []);
 
   useEffect(() => {
@@ -414,6 +487,7 @@ export default function EmpresaPage() {
       setSuccess(
         "Perfil atualizado. Só aparecem períodos da sua cidade de instalação."
       );
+      setProfileOpen(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -598,6 +672,8 @@ export default function EmpresaPage() {
     setDeadlineDays("30");
     clearBanner();
     setEditingId(null);
+    setIsComposing(false);
+    setSponsorStep(1);
   }
 
   function startEditRequest(r) {
@@ -642,7 +718,8 @@ export default function EmpresaPage() {
     setBannerPreviewUrl(src);
     setBannerMeta(src ? { width: 1200, height: 240, canonical: true } : null);
     setSlotModality(r.modality === "monthly" ? "monthly" : "weekly");
-    // Scroll to form
+    setIsComposing(false);
+    setSponsorStep(2);
     try {
       document
         .querySelector('[data-tour="emp-sponsor-form"]')
@@ -653,13 +730,18 @@ export default function EmpresaPage() {
   }
 
   function cancelEdit() {
+    const wasEditing = Boolean(editingId);
     resetSponsorshipFormFields();
     if (company?.legalName) setDisplayName(company.legalName);
-    setSuccess("Edição cancelada.");
+    setSuccess(wasEditing ? "Edição cancelada." : "Solicitação cancelada.");
   }
 
   async function onSubmitSponsorship(event) {
     event.preventDefault();
+    if (sponsorStep !== 3) {
+      goNextStep();
+      return;
+    }
     if (!editingId && !selectedSlot) {
       setError("Selecione um período disponível.");
       return;
@@ -743,22 +825,6 @@ export default function EmpresaPage() {
     }
   }
 
-  async function onConfirmReward(id) {
-    setError("");
-    setSuccess("");
-    setBusy(true);
-    try {
-      const data = await api(`/api/empresa/rewards/${id}/confirm`, {
-        method: "POST",
-      });
-      setSuccess(data.message || "Resgate confirmado.");
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (!ready || mode === "loading") {
     return (
@@ -908,15 +974,12 @@ export default function EmpresaPage() {
 
   return (
     <main className="page page-empresa">
-      <section className="emp-hero reveal" data-tour="emp-hero">
+      <section className="emp-hero emp-hero-compact reveal" data-tour="emp-hero">
         <div className="emp-hero-main">
           <p className="eyebrow">Área da empresa</p>
           <h1>{company?.legalName || "Empresa"}</h1>
           <p className="lead emp-hero-lead">
-            Patrocínio e resgates da própria campanha — sem pedir nem indicar.
-            {companyCityLabel
-              ? ` Instalada em ${companyCityLabel}.`
-              : " Defina a cidade de instalação no perfil."}
+            Patrocínio e resgates — sem pedir nem indicar.
           </p>
         </div>
         <div className="emp-hero-meta">
@@ -924,7 +987,7 @@ export default function EmpresaPage() {
             {cnpjDisplay}
           </span>
           {companyCityLabel ? (
-            <span className="emp-cnpj-badge" title="Cidade">
+            <span className="emp-city-chip" title="Cidade de instalação">
               {companyCityLabel}
             </span>
           ) : null}
@@ -932,9 +995,9 @@ export default function EmpresaPage() {
             <span>
               <strong>{requests.length}</strong> solicitações
             </span>
-            <span>
+            <Link href="/empresa/resgates" className="emp-hero-stat-link">
               <strong>{pendingRewards}</strong> resgates pendentes
-            </span>
+            </Link>
           </div>
         </div>
       </section>
@@ -950,19 +1013,31 @@ export default function EmpresaPage() {
         </p>
       ) : null}
 
-      <div className="emp-dashboard">
-        <section
-          className="emp-panel reveal"
-          data-tour="emp-profile"
-        >
-          <header className="emp-panel-head">
-            <h2>Perfil da empresa</h2>
-            <p className="muted emp-lead">
-              Cidade de instalação obrigatória — só pode patrocinar rankings
-              nessa cidade.
+      {/* ——— Perfil à parte ——— */}
+      <section
+        className={`emp-profile-card reveal${profileOpen ? " is-open" : ""}`}
+        data-tour="emp-profile"
+      >
+        <header className="emp-profile-head">
+          <div>
+            <p className="emp-profile-kicker">Perfil da empresa</p>
+            <h2>{company?.legalName || "Empresa"}</h2>
+            <p className="muted emp-profile-summary">
+              CNPJ {cnpjDisplay}
+              {companyCityLabel ? ` · ${companyCityLabel}` : " · cidade pendente"}
             </p>
-          </header>
-          <form className="emp-form" onSubmit={onSaveProfile}>
+          </div>
+          <button
+            type="button"
+            className="pill-outline sm"
+            aria-expanded={profileOpen}
+            onClick={() => setProfileOpen((v) => !v)}
+          >
+            {profileOpen ? "Fechar" : "Editar perfil"}
+          </button>
+        </header>
+        {profileOpen ? (
+          <form className="emp-form emp-profile-form" onSubmit={onSaveProfile}>
             <div className="emp-form-grid">
               <label className="emp-field">
                 Razão social
@@ -986,6 +1061,7 @@ export default function EmpresaPage() {
                     </option>
                   ))}
                 </select>
+                <span className="hint">Fixa o patrocínio só nesta cidade.</span>
               </label>
             </div>
             <div className="toolbar emp-toolbar">
@@ -998,663 +1074,619 @@ export default function EmpresaPage() {
               </button>
             </div>
           </form>
-        </section>
+        ) : null}
+      </section>
 
-        <section
-          className="emp-panel emp-panel-sponsor reveal"
-          data-tour="emp-sponsor-form"
-        >
-          <header className="emp-panel-head">
+      {/* ——— Wizard solicitar patrocínio ——— */}
+      <section
+        className="emp-wizard reveal"
+        data-tour="emp-sponsor-form"
+      >
+        <header className="emp-wizard-head">
+          <div>
             <h2>
               {editingId
-                ? "Editar solicitação (antes do período)"
-                : "Solicitar patrocínio"}
+                ? "Editar solicitação"
+                : formOpen
+                  ? "Solicitar patrocínio"
+                  : "Solicitar patrocínio"}
             </h2>
-            <p className="muted emp-lead">
-              {editingId
-                ? "Corriga campos e banner enquanto o ranking ainda não começou. Guardar sincroniza a campanha se já estiver aprovada."
-                : hasCompanyCity
-                  ? `Só períodos em ${companyCityLabel}. Até 3 dias antes do início (23h59). Banner obrigatório.`
-                  : "Defina a cidade no perfil acima para ver períodos disponíveis."}
+            <p className="muted">
+              {formOpen
+                ? "Três passos: período, banner e prêmios. Cidade no perfil."
+                : "Fluxo guiado — um passo de cada vez."}
             </p>
-          </header>
-          <form className="emp-form" onSubmit={onSubmitSponsorship}>
-            <div className="emp-form-grid">
-              {!editingId ? (
-              <fieldset
-                className="emp-field emp-field-span emp-slot-fieldset"
-                data-tour="emp-slot"
-              >
-                <legend>
-                  Período disponível
-                  {companyCityLabel ? ` · ${companyCityLabel}` : ""}
-                </legend>
-                {!hasCompanyCity ? (
-                  <p className="muted emp-slot-empty" role="status">
-                    Sem cidade no perfil — salve a cidade de instalação para
-                    liberar slots locais.
-                  </p>
-                ) : (
-                <>
-                <div
-                  className="emp-modality-tabs"
-                  role="tablist"
-                  aria-label="Tipo de ranking"
-                >
+          </div>
+          {!formOpen ? (
+            <button
+              type="button"
+              className="pill-cta"
+              disabled={busy}
+              onClick={startCompose}
+            >
+              Nova solicitação
+            </button>
+          ) : null}
+        </header>
+
+        {!formOpen ? (
+          <p className="muted emp-wizard-idle">
+            Clique em <strong>Nova solicitação</strong> ou edite uma pendente
+            abaixo.
+          </p>
+        ) : (
+          <>
+            <nav className="emp-steps" aria-label="Passos da solicitação">
+              {wizardSteps.map((s) => {
+                const done = sponsorStep > s.id;
+                const active = sponsorStep === s.id;
+                return (
                   <button
+                    key={s.id}
                     type="button"
-                    role="tab"
-                    aria-selected={slotModality === "weekly"}
                     className={
-                      slotModality === "weekly" ? "emp-tab is-active" : "emp-tab"
+                      active
+                        ? "emp-step is-active"
+                        : done
+                          ? "emp-step is-done"
+                          : "emp-step"
                     }
-                    onClick={() => selectModality("weekly")}
+                    aria-current={active ? "step" : undefined}
+                    onClick={() => {
+                      if (done || s.id < sponsorStep) setSponsorStep(s.id);
+                    }}
                   >
-                    Semanal
-                    <span className="emp-tab-count">{weeklyCount}</span>
+                    <span className="emp-step-num">{s.id}</span>
+                    <span className="emp-step-label">{s.label}</span>
                   </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={slotModality === "monthly"}
-                    className={
-                      slotModality === "monthly"
-                        ? "emp-tab is-active"
-                        : "emp-tab"
-                    }
-                    onClick={() => selectModality("monthly")}
-                  >
-                    Mensal
-                    <span className="emp-tab-count">{monthlyCount}</span>
-                  </button>
-                </div>
+                );
+              })}
+            </nav>
 
-                {slotsByModality.length === 0 ? (
-                  <p className="muted emp-slot-empty">
-                    Nenhum período{" "}
-                    {slotModality === "weekly" ? "semanal" : "mensal"} aberto em{" "}
-                    {companyCityLabel} agora.
-                  </p>
-                ) : (
-                  <div
-                    className="emp-slot-list"
-                    role="radiogroup"
-                    aria-label={`Períodos em ${companyCityLabel}`}
-                  >
-                    {slotsByModality.map((s) => {
-                      const selected = s.key === slotKey;
-                      return (
-                        <label
-                          key={s.key}
-                          className={
-                            selected
-                              ? "emp-slot-card is-selected"
-                              : "emp-slot-card"
-                          }
-                        >
-                          <input
-                            type="radio"
-                            name="sponsorship-slot"
-                            value={s.key}
-                            checked={selected}
-                            onChange={() => setSlotKey(s.key)}
-                            required
-                          />
-                          <span className="emp-slot-place">
-                            {s.cityName}/{s.cityState}
-                          </span>
-                          <span className="emp-slot-dates">
-                            {formatPeriod(s.periodStart, s.periodEnd)}
-                          </span>
-                          <span className="emp-slot-deadline">
-                            Solicitar até {formatDeadline(s.requestDeadline)}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-                </>
-                )}
-              </fieldset>
-              ) : (
-                <p className="muted emp-field-span emp-edit-period-note">
-                  Período bloqueado nesta edição — só campos da campanha e
-                  banner.
-                </p>
-              )}
-
-              <label
-                className="emp-field emp-field-span"
-                data-tour="emp-display-name"
-              >
-                Nome exibido (“Patrocinado por”)
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                />
-              </label>
-
-              <div
-                className="emp-banner-field emp-field-span"
-                data-tour="emp-banner"
-              >
-                <div className="emp-banner-head">
-                  <span className="emp-banner-title">
-                    Banner do ranking
-                    <em>obrigatório</em>
-                  </span>
-                  <span className="emp-banner-spec">
-                    Ideal <strong>{SPONSOR_BANNER_UPLOAD.label}</strong> ·
-                    aceita {SPONSOR_BANNER_UPLOAD.ratioMin}:1–
-                    {SPONSOR_BANNER_UPLOAD.ratioMax}:1 (cover no slot 5:1) ·
-                    full-bleed · texto e logo na própria arte
-                  </span>
-                </div>
-                <div
-                  className="emp-banner-preview-frame"
-                  aria-hidden={!bannerPreviewUrl && !bannerUrl}
-                >
-                  {bannerPreviewUrl || bannerUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={bannerPreviewUrl || resolveBannerSrc(bannerUrl)}
-                      src={bannerPreviewUrl || resolveBannerSrc(bannerUrl)}
-                      alt="Prévia do banner do ranking"
-                      className="emp-banner-preview"
-                    />
-                  ) : (
-                    <div className="emp-banner-placeholder">
-                      <span>1200</span>
-                      <span aria-hidden>×</span>
-                      <span>240</span>
-                      <p>Ratio 5:1 · arte completa na imagem</p>
-                    </div>
-                  )}
-                </div>
-                <div className="emp-banner-actions">
-                  <label className="emp-banner-upload pill-outline sm">
-                    {bannerUploading
-                      ? "Enviando…"
-                      : bannerUrl
-                        ? "Trocar imagem"
-                        : "Carregar banner"}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={onBannerFileChange}
-                      disabled={bannerUploading || busy}
-                      required={!bannerUrl}
-                    />
-                  </label>
-                  {bannerUrl ? (
-                    <button
-                      type="button"
-                      className="pill-outline sm"
-                      onClick={clearBanner}
-                      disabled={busy || bannerUploading}
-                    >
-                      Remover
-                    </button>
-                  ) : null}
-                  {bannerMeta ? (
-                    <span
-                      className={
-                        bannerMeta.canonical
-                          ? "emp-banner-meta is-ok"
-                          : "emp-banner-meta is-fit"
-                      }
-                    >
-                      {bannerMeta.width}×{bannerMeta.height}
-                      {bannerMeta.ratioLabel
-                        ? ` · ${bannerMeta.ratioLabel}`
-                        : ""}
-                      {bannerMeta.canonical
-                        ? " · exacto"
-                        : " · cover no slot 5:1"}
-                    </span>
-                  ) : (
-                    <span className="emp-banner-meta muted">
-                      Sem banner — envio bloqueado
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <section
-                className="emp-ranking-preview emp-field-span"
-                data-tour="emp-ranking-preview"
-                aria-label="Prévia do ranking"
-              >
-                <header className="emp-ranking-preview-head">
-                  <h3>Prévia do ranking</h3>
-                  <p className="muted">
-                    Como o banner aparece em Rankings (mesmo layout do
-                    detalhe).
-                  </p>
-                </header>
-                <div
-                  className={`rm-sponsor-hero emp-ranking-preview-hero${
-                    rankingPreview.hasBanner ? " is-real" : " is-placeholder"
-                  }`}
-                  style={{
-                    "--rm-banner-ratio": `${SPONSOR_BANNER_UPLOAD.ratioNumber} / 1`,
-                  }}
-                  data-banner-upload={`${SPONSOR_BANNER_UPLOAD.width}x${SPONSOR_BANNER_UPLOAD.height}`}
-                  data-banner-ratio={SPONSOR_BANNER_UPLOAD.ratio}
-                >
-                  {rankingPreview.hasBanner ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={rankingPreview.bannerSrc}
-                      src={rankingPreview.bannerSrc}
-                      alt={`Prévia: ranking ${rankingPreview.modalityLabel.toLowerCase()} patrocinado por ${rankingPreview.name}`}
-                      className="rm-sponsor-hero-img emp-ranking-preview-img"
-                    />
-                  ) : (
-                    <div className="emp-ranking-preview-empty">
-                      <p>Carregue o banner para ver a prévia full-bleed</p>
-                      <span>Slot 5:1 · cover</span>
-                    </div>
-                  )}
-                  <p className="rm-banner-crumb">
-                    <span>← Rankings</span>
-                  </p>
-                </div>
-                <div className="emp-ranking-preview-meta">
-                  <strong className="emp-ranking-preview-title">
-                    {rankingPreview.title}
-                  </strong>
-                  <p className="ranking-sponsor emp-ranking-preview-sponsor">
-                    <span className="ranking-sponsor-label">
-                      Patrocinado por
-                    </span>{" "}
-                    <strong>{rankingPreview.name}</strong>
-                  </p>
-                </div>
-              </section>
-
-              <fieldset
-                className="emp-field emp-field-span emp-pos-fieldset"
-                data-tour="emp-prizes"
-              >
-                <legend>Posições premiadas</legend>
-                <div
-                  className="emp-pos-presets"
-                  role="group"
-                  aria-label="Atalhos Top N"
-                >
-                  {PRIZE_PRESETS.map((n) => {
-                    const on = topNValid && topNParsed === n;
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        className={
-                          on ? "emp-pos-preset is-active" : "emp-pos-preset"
-                        }
-                        aria-pressed={on}
-                        onClick={() => applyTopN(n)}
-                      >
-                        Top {n}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="emp-topn-row">
-                  <label className="emp-topn-field">
-                    <span>Até a posição (Top N)</span>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={PRIZE_POSITION_MAX}
-                      value={topNInput}
-                      onChange={(e) => onTopNChange(e.target.value)}
-                      aria-describedby="emp-topn-hint"
-                      required
-                    />
-                  </label>
-                  {topNValid ? (
-                    <p className="emp-topn-summary" aria-live="polite">
-                      Premia o <strong>1º ao {topNParsed}º</strong>
-                      <span className="muted">
-                        {" "}
-                        · {topNParsed}{" "}
-                        {topNParsed === 1 ? "posição" : "posições"}
-                      </span>
+            <form className="emp-form" onSubmit={onSubmitSponsorship}>
+              {sponsorStep === 1 ? (
+                <div className="emp-step-panel" data-tour="emp-slot">
+                  <h3>1 · Período</h3>
+                  {editingId ? (
+                    <p className="muted emp-edit-period-note">
+                      Período bloqueado nesta edição —{" "}
+                      {editingRequest
+                        ? `${editingRequest.cityName}/${editingRequest.cityState} · ${editingRequest.modalityLabel} · ${formatPeriod(editingRequest.periodStart, editingRequest.periodEnd)}`
+                        : "só campos da campanha e banner."}
                     </p>
-                  ) : (
-                    <p className="emp-topn-summary muted" aria-live="polite">
-                      Informe N entre 1 e {PRIZE_POSITION_MAX}.
-                    </p>
-                  )}
-                </div>
-                <p id="emp-topn-hint" className="hint">
-                  Ex.: 50, 100 ou 1000 — selecciona 1…N. Máximo{" "}
-                  {PRIZE_POSITION_MAX}.
-                </p>
-              </fieldset>
-
-              <label className="emp-field emp-field-span">
-                Regulamento
-                <textarea
-                  rows={3}
-                  value={regulationText}
-                  onChange={(e) => setRegulationText(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="emp-field">
-                Benefício
-                <select
-                  value={benefitMode}
-                  onChange={(e) => setBenefitMode(e.target.value)}
-                >
-                  <option value="equal">Igual para todas</option>
-                  <option value="per_position">Distinto por posição</option>
-                </select>
-              </label>
-              {benefitMode === "equal" ? (
-                <label className="emp-field">
-                  Texto do benefício
-                  <input
-                    value={benefitEqual}
-                    onChange={(e) => setBenefitEqual(e.target.value)}
-                    required
-                  />
-                </label>
-              ) : useCompactDistinct ? (
-                <div className="emp-field emp-field-span emp-benefit-by-pos">
-                  <span className="emp-benefit-by-pos-label">
-                    Benefício distinto (Top {prizePositions.length})
-                  </span>
-                  <p className="hint emp-benefit-scale-note">
-                    Com mais de {PER_POSITION_FULL_UI} posições, usa um texto
-                    padrão para todas e overrides só onde precisares — sem{" "}
-                    {prizePositions.length} campos.
-                  </p>
-                  <label className="emp-field">
-                    Benefício padrão (todas as posições)
-                    <input
-                      value={benefitDefault}
-                      onChange={(e) => setBenefitDefault(e.target.value)}
-                      placeholder="Ex.: voucher de R$ 50"
-                      required
-                    />
-                  </label>
-                  <div className="emp-override-add">
-                    <label className="emp-field emp-field-narrow">
-                      Override posição
-                      <input
-                        type="number"
-                        min={1}
-                        max={prizePositions.length || 1}
-                        value={overridePosInput}
-                        onChange={(e) =>
-                          setOverridePosInput(e.target.value.replace(/\D/g, ""))
-                        }
-                        placeholder="ex. 1"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="pill-outline sm"
-                      onClick={addOverridePosition}
-                    >
-                      Personalizar
-                    </button>
-                  </div>
-                  {expandedOverrides.length ? (
-                    <div className="emp-benefit-rows">
-                      {expandedOverrides.map((pos) => (
-                        <label key={pos} className="emp-benefit-row emp-benefit-row-override">
-                          <span>{pos}º</span>
-                          <input
-                            value={benefitByPosition[String(pos)] || ""}
-                            onChange={(e) =>
-                              setBenefitForPosition(pos, e.target.value)
-                            }
-                            placeholder={`Benefício do ${pos}º (substitui o padrão)`}
-                          />
-                          <button
-                            type="button"
-                            className="emp-override-remove"
-                            onClick={() => removeOverride(pos)}
-                            aria-label={`Remover override do ${pos}º`}
-                          >
-                            ×
-                          </button>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
+                  ) : !hasCompanyCity ? (
                     <p className="muted">
-                      Sem overrides — todas usam o benefício padrão.
+                      Salve a cidade no perfil para ver períodos locais.
                     </p>
-                  )}
-                </div>
-              ) : (
-                <div className="emp-field emp-field-span emp-benefit-by-pos">
-                  <div className="emp-benefit-by-pos-head">
-                    <span className="emp-benefit-by-pos-label">
-                      Benefício por posição
-                    </span>
-                    <button
-                      type="button"
-                      className="pill-outline sm emp-replicate-btn"
-                      onClick={replicateBenefitToAll}
-                      disabled={!prizePositions.length}
-                      title="Copia o texto do 1º (ou do campo focado) para as outras posições"
-                    >
-                      Replicar para todos
-                    </button>
-                  </div>
-                  {prizePositions.length === 0 ? (
-                    <p className="muted">Defina o Top N acima.</p>
                   ) : (
-                    <>
-                      <p className="hint emp-benefit-scale-note">
-                        Preenche uma posição e usa «Replicar para todos» para
-                        aplicar às restantes
-                        {benefitFocusPos != null
-                          ? ` (origem: ${benefitFocusPos}º)`
-                          : " (origem: 1º)"}.
-                      </p>
-                      <div className="emp-benefit-rows">
-                        {prizePositions.map((pos) => (
-                          <label key={pos} className="emp-benefit-row">
-                            <span>{pos}º</span>
-                            <input
-                              value={benefitByPosition[String(pos)] || ""}
-                              onChange={(e) =>
-                                setBenefitForPosition(pos, e.target.value)
-                              }
-                              onFocus={() => setBenefitFocusPos(pos)}
-                              placeholder={`Benefício do ${pos}º lugar`}
-                              required
-                            />
-                          </label>
-                        ))}
+                    <fieldset className="emp-field emp-slot-fieldset">
+                      <legend className="visually-hidden">
+                        Período em {companyCityLabel}
+                      </legend>
+                      <div
+                        className="emp-modality-tabs"
+                        role="tablist"
+                        aria-label="Tipo de ranking"
+                      >
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={slotModality === "weekly"}
+                          className={
+                            slotModality === "weekly"
+                              ? "emp-tab is-active"
+                              : "emp-tab"
+                          }
+                          onClick={() => selectModality("weekly")}
+                        >
+                          Semanal
+                          <span className="emp-tab-count">{weeklyCount}</span>
+                        </button>
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={slotModality === "monthly"}
+                          className={
+                            slotModality === "monthly"
+                              ? "emp-tab is-active"
+                              : "emp-tab"
+                          }
+                          onClick={() => selectModality("monthly")}
+                        >
+                          Mensal
+                          <span className="emp-tab-count">{monthlyCount}</span>
+                        </button>
                       </div>
-                    </>
+                      {slotsByModality.length === 0 ? (
+                        <p className="muted emp-slot-empty">
+                          Nenhum período{" "}
+                          {slotModality === "weekly" ? "semanal" : "mensal"}{" "}
+                          aberto em {companyCityLabel}.
+                        </p>
+                      ) : (
+                        <div
+                          className="emp-slot-list"
+                          role="radiogroup"
+                          aria-label={`Períodos em ${companyCityLabel}`}
+                        >
+                          {slotsByModality.map((s) => {
+                            const selected = s.key === slotKey;
+                            return (
+                              <label
+                                key={s.key}
+                                className={
+                                  selected
+                                    ? "emp-slot-card is-selected"
+                                    : "emp-slot-card"
+                                }
+                              >
+                                <input
+                                  type="radio"
+                                  name="sponsorship-slot"
+                                  value={s.key}
+                                  checked={selected}
+                                  onChange={() => setSlotKey(s.key)}
+                                  required
+                                />
+                                <span className="emp-slot-place">
+                                  {s.cityName}/{s.cityState}
+                                </span>
+                                <span className="emp-slot-dates">
+                                  {formatPeriod(s.periodStart, s.periodEnd)}
+                                </span>
+                                <span className="emp-slot-deadline">
+                                  Solicitar até{" "}
+                                  {formatDeadline(s.requestDeadline)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </fieldset>
                   )}
                 </div>
-              )}
-              <label className="emp-field emp-field-span">
-                Instruções de resgate
-                <textarea
-                  rows={2}
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="emp-field emp-field-narrow">
-                Prazo de resgate (dias)
-                <input
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={deadlineDays}
-                  onChange={(e) => setDeadlineDays(e.target.value)}
-                  required
-                />
-              </label>
-            </div>
-            <div className="toolbar emp-toolbar" data-tour="emp-submit">
-              <button
-                className="pill-cta"
-                type="submit"
-                disabled={
-                  busy ||
-                  bannerUploading ||
-                  (!editingId && (!hasCompanyCity || !openSlots.length)) ||
-                  !topNValid ||
-                  !bannerUrl
-                }
-              >
-                {busy
-                  ? editingId
-                    ? "Guardando…"
-                    : "Enviando…"
-                  : editingId
-                    ? "Guardar alterações"
-                    : "Enviar para análise"}
-              </button>
-              {editingId ? (
-                <button
-                  type="button"
-                  className="pill-outline"
-                  disabled={busy || bannerUploading}
-                  onClick={cancelEdit}
-                >
-                  Cancelar edição
-                </button>
               ) : null}
-              {!bannerUrl ? (
-                <p className="muted emp-save-block">
-                  Carregue o banner {SPONSOR_BANNER_UPLOAD.label} para liberar o
-                  envio.
-                </p>
-              ) : !editingId && !hasCompanyCity ? (
-                <p className="muted">
-                  Defina a cidade no perfil para solicitar patrocínio local.
-                </p>
-              ) : !editingId && !openSlots.length ? (
-                <p className="muted">
-                  Nenhum período aberto em {companyCityLabel} no momento.
-                </p>
-              ) : null}
-            </div>
-          </form>
-        </section>
 
-        <aside className="emp-side">
-          <section className="emp-panel reveal" data-tour="emp-requests">
-            <header className="emp-panel-head">
-              <h2>Minhas solicitações</h2>
-            </header>
-            {requests.length === 0 ? (
-              <p className="muted">Nenhuma solicitação ainda.</p>
-            ) : (
-              <ul className="emp-list">
-                {requests.map((r) => (
-                  <li
-                    key={r.id}
-                    className={
-                      editingId === r.id
-                        ? "emp-list-item is-editing"
-                        : "emp-list-item"
-                    }
-                    data-request-id={r.id}
-                    data-request-status={r.status}
-                  >
-                    <div>
-                      <strong>
-                        {r.cityName}/{r.cityState} · {r.modalityLabel}
-                      </strong>
-                      <p className="muted">
-                        {formatPeriod(r.periodStart, r.periodEnd)} ·{" "}
-                        {r.displayName}
-                      </p>
-                      {r.editable ? (
-                        <p className="hint emp-edit-hint">
-                          Editável até {formatDay(r.periodStart)} (início do
-                          período).
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="emp-request-actions">
-                      <span className={statusClass(r.status)}>
-                        {r.statusLabel}
+              {sponsorStep === 2 ? (
+                <div className="emp-step-panel" data-tour="emp-step-banner">
+                  <h3>2 · Banner</h3>
+                  <label className="emp-field" data-tour="emp-display-name">
+                    Nome exibido (“Patrocinado por”)
+                    <input
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <div className="emp-banner-field" data-tour="emp-banner">
+                    <div className="emp-banner-head">
+                      <span className="emp-banner-title">
+                        Banner do ranking
+                        <em>obrigatório</em>
                       </span>
-                      {r.editable ? (
+                      <span className="emp-banner-spec">
+                        Ideal <strong>{SPONSOR_BANNER_UPLOAD.label}</strong> ·
+                        ratio ~5:1 · texto e logo na arte
+                      </span>
+                    </div>
+                    <div
+                      className={`rm-sponsor-hero emp-ranking-preview-hero${
+                        rankingPreview.hasBanner
+                          ? " is-real"
+                          : " is-placeholder"
+                      }`}
+                      style={{
+                        "--rm-banner-ratio": `${SPONSOR_BANNER_UPLOAD.ratioNumber} / 1`,
+                      }}
+                      data-tour="emp-ranking-preview"
+                    >
+                      {rankingPreview.hasBanner ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={rankingPreview.bannerSrc}
+                          src={rankingPreview.bannerSrc}
+                          alt={`Prévia: ranking patrocinado por ${rankingPreview.name}`}
+                          className="rm-sponsor-hero-img emp-ranking-preview-img"
+                        />
+                      ) : (
+                        <div className="emp-ranking-preview-empty">
+                          <p>Carregue o banner (prévia full-bleed)</p>
+                          <span>Slot 5:1</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="emp-banner-preview-caption muted">
+                      {rankingPreview.title}
+                    </p>
+                    <div className="emp-banner-actions">
+                      <label className="emp-banner-upload pill-outline sm">
+                        {bannerUploading
+                          ? "Enviando…"
+                          : bannerUrl
+                            ? "Trocar imagem"
+                            : "Carregar banner"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={onBannerFileChange}
+                          disabled={bannerUploading || busy}
+                          required={!bannerUrl}
+                        />
+                      </label>
+                      {bannerUrl ? (
                         <button
                           type="button"
                           className="pill-outline sm"
-                          disabled={busy}
-                          onClick={() => startEditRequest(r)}
+                          onClick={clearBanner}
+                          disabled={busy || bannerUploading}
                         >
-                          {editingId === r.id ? "A editar…" : "Editar"}
+                          Remover
                         </button>
                       ) : null}
+                      {bannerMeta ? (
+                        <span
+                          className={
+                            bannerMeta.canonical
+                              ? "emp-banner-meta is-ok"
+                              : "emp-banner-meta is-fit"
+                          }
+                        >
+                          {bannerMeta.width}×{bannerMeta.height}
+                          {bannerMeta.canonical ? " · exacto" : " · cover"}
+                        </span>
+                      ) : (
+                        <span className="emp-banner-meta muted">
+                          Sem banner
+                        </span>
+                      )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                  </div>
+                </div>
+              ) : null}
 
-          <section className="emp-panel reveal" data-tour="emp-rewards">
-            <header className="emp-panel-head">
-              <h2>Resgates da campanha</h2>
-              <p className="muted emp-lead">
-                Pendente → Resgatado (você confirma) → Expirado. Só a empresa
-                confirma.
-              </p>
-            </header>
-            {rewards.length === 0 ? (
-              <p className="muted">Nenhum benefício a confirmar.</p>
-            ) : (
-              <ul className="emp-list">
-                {rewards.map((rw) => (
-                  <li key={rw.id} className="emp-list-item emp-reward">
-                    <div>
-                      <strong>
-                        {rw.finalPosition}º · @{rw.username}
-                      </strong>
-                      <p className="muted">{rw.rankingTitle}</p>
-                      <p className="emp-reward-benefit">{rw.benefitText}</p>
-                      <p className="hint">
-                        Validade até {formatPeriod(rw.expiresAt)}
-                        {rw.redeemedAt
-                          ? ` · confirmado em ${formatPeriod(rw.redeemedAt)}`
-                          : ""}
-                      </p>
+              {sponsorStep === 3 ? (
+                <div className="emp-step-panel" data-tour="emp-step-prizes">
+                  <h3>3 · Prêmios</h3>
+                  <fieldset
+                    className="emp-field emp-pos-fieldset"
+                    data-tour="emp-prizes"
+                  >
+                    <legend>Posições premiadas</legend>
+                    <div
+                      className="emp-pos-presets"
+                      role="group"
+                      aria-label="Atalhos Top N"
+                    >
+                      {PRIZE_PRESETS.map((n) => {
+                        const on = topNValid && topNParsed === n;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            className={
+                              on
+                                ? "emp-pos-preset is-active"
+                                : "emp-pos-preset"
+                            }
+                            aria-pressed={on}
+                            onClick={() => applyTopN(n)}
+                          >
+                            Top {n}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="emp-reward-actions">
-                      <span className={statusClass(rw.status)}>
-                        {rw.statusLabel}
-                      </span>
-                      {rw.status === "pending" ? (
+                    <div className="emp-topn-row">
+                      <label className="emp-topn-field">
+                        <span>Top N</span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={PRIZE_POSITION_MAX}
+                          value={topNInput}
+                          onChange={(e) => onTopNChange(e.target.value)}
+                          required
+                        />
+                      </label>
+                      {topNValid ? (
+                        <p className="emp-topn-summary" aria-live="polite">
+                          Premia o <strong>1º ao {topNParsed}º</strong>
+                        </p>
+                      ) : (
+                        <p className="emp-topn-summary muted">
+                          N entre 1 e {PRIZE_POSITION_MAX}.
+                        </p>
+                      )}
+                    </div>
+                  </fieldset>
+
+                  <label className="emp-field">
+                    Regulamento
+                    <textarea
+                      rows={3}
+                      value={regulationText}
+                      onChange={(e) => setRegulationText(e.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <div className="emp-form-grid">
+                    <label className="emp-field">
+                      Benefício
+                      <select
+                        value={benefitMode}
+                        onChange={(e) => setBenefitMode(e.target.value)}
+                      >
+                        <option value="equal">Igual para todas</option>
+                        <option value="per_position">
+                          Distinto por posição
+                        </option>
+                      </select>
+                    </label>
+                    {benefitMode === "equal" ? (
+                      <label className="emp-field">
+                        Texto do benefício
+                        <input
+                          value={benefitEqual}
+                          onChange={(e) => setBenefitEqual(e.target.value)}
+                          required
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+
+                  {benefitMode === "per_position" && useCompactDistinct ? (
+                    <div className="emp-field emp-benefit-by-pos">
+                      <p className="hint emp-benefit-scale-note">
+                        Top {prizePositions.length}: texto padrão + overrides.
+                      </p>
+                      <label className="emp-field">
+                        Benefício padrão
+                        <input
+                          value={benefitDefault}
+                          onChange={(e) => setBenefitDefault(e.target.value)}
+                          placeholder="Ex.: voucher de R$ 50"
+                          required
+                        />
+                      </label>
+                      <div className="emp-override-add">
+                        <label className="emp-field emp-field-narrow">
+                          Override posição
+                          <input
+                            type="number"
+                            min={1}
+                            max={prizePositions.length || 1}
+                            value={overridePosInput}
+                            onChange={(e) =>
+                              setOverridePosInput(
+                                e.target.value.replace(/\D/g, "")
+                              )
+                            }
+                            placeholder="ex. 1"
+                          />
+                        </label>
                         <button
                           type="button"
-                          className="pill-cta sm"
-                          disabled={busy}
-                          onClick={() => onConfirmReward(rw.id)}
+                          className="pill-outline sm"
+                          onClick={addOverridePosition}
                         >
-                          Confirmar resgate
+                          Personalizar
                         </button>
-                      ) : null}
+                      </div>
+                      {expandedOverrides.length ? (
+                        <div className="emp-benefit-rows">
+                          {expandedOverrides.map((pos) => (
+                            <label
+                              key={pos}
+                              className="emp-benefit-row emp-benefit-row-override"
+                            >
+                              <span>{pos}º</span>
+                              <input
+                                value={benefitByPosition[String(pos)] || ""}
+                                onChange={(e) =>
+                                  setBenefitForPosition(pos, e.target.value)
+                                }
+                                placeholder={`Benefício do ${pos}º`}
+                              />
+                              <button
+                                type="button"
+                                className="emp-override-remove"
+                                onClick={() => removeOverride(pos)}
+                                aria-label={`Remover override do ${pos}º`}
+                              >
+                                ×
+                              </button>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="muted">Sem overrides — usam o padrão.</p>
+                      )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
+                  ) : null}
+
+                  {benefitMode === "per_position" && !useCompactDistinct ? (
+                    <div className="emp-field emp-benefit-by-pos">
+                      <div className="emp-benefit-by-pos-head">
+                        <span className="emp-benefit-by-pos-label">
+                          Benefício por posição
+                        </span>
+                        <button
+                          type="button"
+                          className="pill-outline sm emp-replicate-btn"
+                          onClick={replicateBenefitToAll}
+                          disabled={!prizePositions.length}
+                        >
+                          Replicar para todos
+                        </button>
+                      </div>
+                      {prizePositions.length === 0 ? (
+                        <p className="muted">Defina o Top N.</p>
+                      ) : (
+                        <div className="emp-benefit-rows">
+                          {prizePositions.map((pos) => (
+                            <label key={pos} className="emp-benefit-row">
+                              <span>{pos}º</span>
+                              <input
+                                value={benefitByPosition[String(pos)] || ""}
+                                onChange={(e) =>
+                                  setBenefitForPosition(pos, e.target.value)
+                                }
+                                onFocus={() => setBenefitFocusPos(pos)}
+                                placeholder={`Benefício do ${pos}º lugar`}
+                                required
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+
+                  <label className="emp-field">
+                    Instruções de resgate
+                    <textarea
+                      rows={2}
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="emp-field emp-field-narrow">
+                    Prazo de resgate (dias)
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={deadlineDays}
+                      onChange={(e) => setDeadlineDays(e.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              <div className="emp-wizard-nav" data-tour="emp-submit">
+                {sponsorStep > 1 ? (
+                  <button
+                    type="button"
+                    className="pill-outline"
+                    onClick={goPrevStep}
+                    disabled={busy || bannerUploading}
+                  >
+                    Voltar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="pill-outline"
+                    onClick={cancelEdit}
+                    disabled={busy || bannerUploading}
+                  >
+                    Cancelar
+                  </button>
+                )}
+                {sponsorStep < 3 ? (
+                  <button
+                    type="button"
+                    className="pill-cta"
+                    onClick={goNextStep}
+                    disabled={busy || bannerUploading}
+                  >
+                    Continuar
+                  </button>
+                ) : (
+                  <button
+                    className="pill-cta"
+                    type="submit"
+                    disabled={
+                      busy ||
+                      bannerUploading ||
+                      (!editingId &&
+                        (!hasCompanyCity || !openSlots.length)) ||
+                      !topNValid ||
+                      !bannerUrl
+                    }
+                  >
+                    {busy
+                      ? editingId
+                        ? "Guardando…"
+                        : "Enviando…"
+                      : editingId
+                        ? "Guardar alterações"
+                        : "Enviar para análise"}
+                  </button>
+                )}
+                {sponsorStep > 1 ? (
+                  <button
+                    type="button"
+                    className="pill-outline sm emp-wizard-cancel"
+                    onClick={cancelEdit}
+                    disabled={busy || bannerUploading}
+                  >
+                    Cancelar
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          </>
+        )}
+      </section>
+
+      {/* ——— Solicitações ——— */}
+      <div className="emp-secondary emp-secondary-solo">
+        <section className="emp-panel reveal" data-tour="emp-requests">
+          <header className="emp-panel-head">
+            <h2>Minhas solicitações</h2>
+          </header>
+          {requests.length === 0 ? (
+            <p className="muted">Nenhuma solicitação ainda.</p>
+          ) : (
+            <ul className="emp-list">
+              {requests.map((r) => (
+                <li
+                  key={r.id}
+                  className={
+                    editingId === r.id
+                      ? "emp-list-item is-editing"
+                      : "emp-list-item"
+                  }
+                  data-request-id={r.id}
+                  data-request-status={r.status}
+                >
+                  <div>
+                    <strong>
+                      {r.cityName}/{r.cityState} · {r.modalityLabel}
+                    </strong>
+                    <p className="muted">
+                      {formatPeriod(r.periodStart, r.periodEnd)} ·{" "}
+                      {r.displayName}
+                    </p>
+                  </div>
+                  <div className="emp-request-actions">
+                    <span className={statusClass(r.status)}>
+                      {r.statusLabel}
+                    </span>
+                    {r.editable ? (
+                      <button
+                        type="button"
+                        className="pill-outline sm"
+                        disabled={busy}
+                        onClick={() => startEditRequest(r)}
+                      >
+                        {editingId === r.id ? "A editar…" : "Editar"}
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
       </div>
     </main>
   );

@@ -6268,99 +6268,238 @@ main.page.page-empresa {
   font-variant-numeric: tabular-nums;
 }
 
-/* Fluxo didático: 1 solicitações → 2 editar → 3 resgates */
-.emp-flow {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.emp-hero-compact {
+  padding: 0.85rem 1rem;
 }
 
-.emp-flow-step {
-  padding: 0.85rem 1rem 1rem;
-  background: linear-gradient(165deg, #fff 0%, #fffaf6 100%);
+.emp-city-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--brand-deep);
+  background: color-mix(in srgb, var(--brand) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
+  border-radius: 999px;
+}
+
+/* Perfil isolado */
+.emp-profile-card {
+  padding: 0.85rem 1rem;
+  background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
-  min-width: 0;
 }
 
-.emp-flow-step-form {
+.emp-profile-card.is-open {
   border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
 }
 
-.emp-flow-head {
+.emp-profile-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 0.55rem 0.75rem;
-  margin-bottom: 0.65rem;
+  justify-content: space-between;
+  gap: 0.55rem 0.85rem;
 }
 
-.emp-flow-num {
-  flex-shrink: 0;
+.emp-profile-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.emp-profile-head h2 {
+  margin: 0.1rem 0 0.15rem;
+  font-size: 1rem;
+}
+
+.emp-profile-summary {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.emp-profile-form {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+/* Wizard patrocínio */
+.emp-wizard {
+  padding: 0.95rem 1rem 1.05rem;
+  background: linear-gradient(165deg, #fff 0%, #fffaf6 100%);
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+
+.emp-wizard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.emp-wizard-head h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1.05rem;
+}
+
+.emp-wizard-head .muted {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.emp-wizard-idle {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.emp-wizard-idle strong {
+  color: var(--ink);
+}
+
+.emp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.emp-hero-stat-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.emp-hero-stat-link:hover {
+  color: var(--brand-deep);
+}
+
+.emp-secondary-solo {
+  grid-template-columns: 1fr;
+}
+
+.emp-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.emp-step-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  margin-top: 0.05rem;
+  width: 1.35rem;
+  height: 1.35rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
-  background: var(--brand);
-  box-shadow: 0 1px 4px rgba(253, 83, 34, 0.28);
+  background: var(--cream);
+  color: var(--muted);
 }
 
-.emp-flow-head-text {
-  flex: 1 1 10rem;
+.emp-step-label {
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.emp-step.is-active {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  background: color-mix(in srgb, var(--brand) 7%, #fff);
+  color: var(--brand-deep);
+  box-shadow: 0 0 0 2px rgba(253, 83, 34, 0.1);
+}
+
+.emp-step.is-active .emp-step-num {
+  background: var(--brand);
+  color: #fff;
+}
+
+.emp-step.is-done {
+  color: var(--ink);
+}
+
+.emp-step.is-done .emp-step-num {
+  background: color-mix(in srgb, var(--brand) 18%, #fff);
+  color: var(--brand-deep);
+}
+
+.emp-step-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
   min-width: 0;
 }
 
-.emp-flow-head-text h2 {
+.emp-step-panel h3 {
   margin: 0;
-  font-size: 0.98rem;
-  line-height: 1.25;
+  font-size: 0.92rem;
+  color: var(--ink);
 }
 
-.emp-flow-head-text .muted {
-  margin: 0.12rem 0 0;
+.emp-city-fixed {
+  margin: 0;
+  font-size: 0.92rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+}
+
+.emp-banner-preview-caption {
+  margin: 0.15rem 0 0;
   font-size: 0.78rem;
 }
 
-.emp-flow-cta {
-  margin-left: auto;
-  align-self: center;
-}
-
-.emp-flow-badge {
-  margin-left: auto;
-  align-self: center;
-  display: inline-flex;
+.emp-wizard-nav {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  min-width: 1.4rem;
-  padding: 0.12rem 0.42rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
-  background: var(--brand);
+  gap: 0.45rem 0.55rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
 }
 
-.emp-flow-empty {
-  margin: 0;
-  font-size: 0.82rem;
+.emp-wizard-cancel {
+  margin-left: auto;
 }
 
-.emp-flow-empty strong {
-  font-weight: 700;
-  color: var(--ink);
+.emp-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--section-gap);
+  align-items: start;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .emp-dashboard {
@@ -7079,6 +7218,10 @@ main.page.page-empresa {
     grid-template-columns: 1fr;
   }
 
+  .emp-secondary {
+    grid-template-columns: 1fr;
+  }
+
   .emp-hero-meta {
     align-items: flex-start;
   }
@@ -7108,6 +7251,14 @@ main.page.page-empresa {
     min-width: 0;
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .emp-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .emp-wizard-cancel {
+    margin-left: 0;
   }
 }
 
