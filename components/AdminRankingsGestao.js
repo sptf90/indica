@@ -6,10 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client-api";
 
 const PHASE_FILTERS = [
-  { value: "finalizados", label: "Finalizados" },
-  { value: "ativos", label: "Ativos" },
-  { value: "agendados", label: "Agendados" },
-  { value: "pendentes", label: "Solicitações pendentes" },
+  { value: "finalizados", label: "Finalizados", hint: "Já encerrados" },
+  { value: "ativos", label: "Ativos", hint: "Em curso agora" },
+  { value: "agendados", label: "Agendados", hint: "Ainda não começaram" },
+  { value: "pendentes", label: "Pendentes", hint: "Patrocínios a decidir" },
 ];
 
 function parseDate(value) {
@@ -34,6 +34,19 @@ function formatPeriod(start, end) {
   const left = formatDay(start);
   if (!end) return left;
   return `${left} → ${formatDay(end)}`;
+}
+
+function cityKey(item) {
+  if (item.cityId == null) return "brasil";
+  return String(item.cityId);
+}
+
+function cityLabel(item) {
+  if (item.cityId == null) {
+    return item.cityName || "Brasil";
+  }
+  const name = item.cityName || "Cidade";
+  return item.cityState ? `${name}/${item.cityState}` : name;
 }
 
 function statusClass(status) {
@@ -80,6 +93,11 @@ function redemptionSummary(item) {
   return instructions ? `${daysLabel} · ${instructions}` : daysLabel;
 }
 
+function matchesCity(item, cityFilter) {
+  if (!cityFilter || cityFilter === "all") return true;
+  return cityKey(item) === cityFilter;
+}
+
 /**
  * @param {{ modality: "monthly" | "weekly"; title: string }} props
  */
@@ -89,13 +107,8 @@ export default function AdminRankingsGestao({ modality, title }) {
   const [denied, setDenied] = useState(false);
   const [rankings, setRankings] = useState([]);
   const [pending, setPending] = useState([]);
-  const [counts, setCounts] = useState({
-    finalizados: 0,
-    ativos: 0,
-    agendados: 0,
-    pendentes: 0,
-  });
   const [phase, setPhase] = useState("ativos");
+  const [cityFilter, setCityFilter] = useState("all");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busyId, setBusyId] = useState(null);
@@ -108,14 +121,6 @@ export default function AdminRankingsGestao({ modality, title }) {
     );
     setRankings(data.rankings || []);
     setPending(data.pending || []);
-    setCounts(
-      data.counts || {
-        finalizados: 0,
-        ativos: 0,
-        agendados: 0,
-        pendentes: 0,
-      }
-    );
   }, [modality]);
 
   useEffect(() => {
@@ -155,8 +160,50 @@ export default function AdminRankingsGestao({ modality, title }) {
 
   useEffect(() => {
     setPhase("ativos");
+    setCityFilter("all");
     setPhaseSeeded(false);
   }, [modality]);
+
+  const cityOptions = useMemo(() => {
+    const map = new Map();
+    for (const item of rankings) {
+      const key = cityKey(item);
+      if (!map.has(key)) {
+        map.set(key, { value: key, label: cityLabel(item) });
+      }
+    }
+    for (const item of pending) {
+      const key = cityKey(item);
+      if (!map.has(key)) {
+        map.set(key, { value: key, label: cityLabel(item) });
+      }
+    }
+    return [...map.values()].sort((a, b) =>
+      a.label.localeCompare(b.label, "pt-BR")
+    );
+  }, [rankings, pending]);
+
+  const filteredRankings = useMemo(
+    () => rankings.filter((r) => matchesCity(r, cityFilter)),
+    [rankings, cityFilter]
+  );
+
+  const filteredPending = useMemo(
+    () => pending.filter((p) => matchesCity(p, cityFilter)),
+    [pending, cityFilter]
+  );
+
+  const counts = useMemo(
+    () => ({
+      finalizados: filteredRankings.filter((r) => r.phase === "finalizados")
+        .length,
+      ativos: filteredRankings.filter((r) => r.phase === "ativos").length,
+      agendados: filteredRankings.filter((r) => r.phase === "agendados")
+        .length,
+      pendentes: filteredPending.length,
+    }),
+    [filteredRankings, filteredPending]
+  );
 
   useEffect(() => {
     if (!ready || denied || phaseSeeded) return;
@@ -165,6 +212,14 @@ export default function AdminRankingsGestao({ modality, title }) {
     if (pick) setPhase(pick);
     setPhaseSeeded(true);
   }, [ready, denied, phaseSeeded, counts]);
+
+  useEffect(() => {
+    if (!ready || denied) return;
+    if ((counts[phase] || 0) > 0) return;
+    const order = ["ativos", "agendados", "pendentes", "finalizados"];
+    const pick = order.find((key) => (counts[key] || 0) > 0);
+    if (pick && pick !== phase) setPhase(pick);
+  }, [cityFilter, counts, phase, ready, denied]);
 
   async function runAction(id, action) {
     setBusyId(id);
@@ -187,14 +242,12 @@ export default function AdminRankingsGestao({ modality, title }) {
 
   const visibleRankings = useMemo(() => {
     if (phase === "pendentes") return [];
-    return rankings.filter((r) => r.phase === phase);
-  }, [rankings, phase]);
+    return filteredRankings.filter((r) => r.phase === phase);
+  }, [filteredRankings, phase]);
 
-  const totalTracked =
-    (counts.finalizados || 0) +
-    (counts.ativos || 0) +
-    (counts.agendados || 0) +
-    (counts.pendentes || 0);
+  const activePhase = PHASE_FILTERS.find((f) => f.value === phase);
+  const listCount =
+    phase === "pendentes" ? filteredPending.length : visibleRankings.length;
 
   if (!ready) {
     return (
@@ -211,7 +264,7 @@ export default function AdminRankingsGestao({ modality, title }) {
           <p className="eyebrow">Admin</p>
           <h1>Acesso restrito</h1>
           <p className="lead admin-lead">
-            Só administradores acedem a esta área.
+            Só administradores acessam esta área.
           </p>
           {error ? (
             <p className="form-error" role="alert">
@@ -225,20 +278,20 @@ export default function AdminRankingsGestao({ modality, title }) {
 
   return (
     <main className="page page-admin page-admin-gestao">
-      <section className="admin-hero">
+      <section className="admin-hero admin-hero-compact">
         <div className="admin-hero-main">
           <p className="eyebrow">Admin · Rankings</p>
-          <h1>Gestão {title}</h1>
+          <h1>{title}</h1>
           <p className="lead admin-lead">
-            Acompanhar períodos finalizados, ativos e agendados; decidir
-            solicitações de patrocínio desta modalidade.
+            Escolha a cidade, depois a fase.
           </p>
         </div>
         <div className="admin-hero-meta">
-          <span className="admin-count-badge">
-            <strong>{totalTracked}</strong> itens
-          </span>
-          <div className="admin-modality-switch" role="navigation" aria-label="Modalidade">
+          <div
+            className="admin-modality-switch"
+            role="navigation"
+            aria-label="Modalidade"
+          >
             <Link
               href="/admin/rankings/mensal"
               className={`admin-mod-link${modality === "monthly" ? " is-active" : ""}`}
@@ -266,6 +319,34 @@ export default function AdminRankingsGestao({ modality, title }) {
         </p>
       ) : null}
 
+      <div className="admin-toolbar">
+        <label className="admin-city-filter">
+          <span className="admin-city-filter-label">Cidade</span>
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            aria-label="Filtrar por cidade"
+          >
+            <option value="all">Todas as cidades</option>
+            {cityOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="admin-toolbar-hint muted">
+          {activePhase ? activePhase.hint : ""}
+          {listCount > 0 ? (
+            <>
+              {" "}
+              · <strong>{listCount}</strong>
+              {listCount === 1 ? " item" : " itens"}
+            </>
+          ) : null}
+        </p>
+      </div>
+
       <div className="admin-filters" role="tablist" aria-label="Fase do ranking">
         {PHASE_FILTERS.map((f) => (
           <button
@@ -273,24 +354,26 @@ export default function AdminRankingsGestao({ modality, title }) {
             type="button"
             role="tab"
             aria-selected={phase === f.value}
+            title={f.hint}
             className={`admin-filter${phase === f.value ? " is-active" : ""}`}
             onClick={() => setPhase(f.value)}
           >
-            {f.label}
+            <span className="admin-filter-label">{f.label}</span>
             <span className="admin-filter-count">{counts[f.value] ?? 0}</span>
           </button>
         ))}
       </div>
 
-      <section className="admin-panel">
+      <section className="admin-panel" aria-live="polite">
         {phase === "pendentes" ? (
-          !pending.length ? (
+          !filteredPending.length ? (
             <p className="muted admin-empty">
-              Nenhuma solicitação pendente nesta modalidade.
+              Nenhuma solicitação pendente
+              {cityFilter !== "all" ? " nesta cidade" : ""}.
             </p>
           ) : (
             <ul className="admin-list admin-list-dense">
-              {pending.map((item) => {
+              {filteredPending.map((item) => {
                 const open = expandedId === item.id;
                 const busy = busyId === item.id;
                 const positions = Array.isArray(item.prizePositions)
@@ -306,7 +389,7 @@ export default function AdminRankingsGestao({ modality, title }) {
                   >
                     <header className="admin-card-head">
                       <div className="admin-card-title">
-                        <strong>{item.displayName}</strong>
+                        <strong>{cityLabel(item)}</strong>
                         <span className={statusClass(item.status)}>
                           {item.statusLabel}
                         </span>
@@ -314,18 +397,7 @@ export default function AdminRankingsGestao({ modality, title }) {
                     </header>
 
                     <p className="muted admin-card-meta">
-                      <span>#{item.id}</span>
-                      <span className="admin-meta-sep" aria-hidden>
-                        ·
-                      </span>
                       <span>{item.companyLegalName || "Empresa"}</span>
-                      <span className="admin-meta-sep" aria-hidden>
-                        ·
-                      </span>
-                      <span>
-                        {item.cityName || "—"}
-                        {item.cityState ? `/${item.cityState}` : ""}
-                      </span>
                       <span className="admin-meta-sep" aria-hidden>
                         ·
                       </span>
@@ -334,40 +406,42 @@ export default function AdminRankingsGestao({ modality, title }) {
                       </span>
                     </p>
 
-                    <dl className="admin-summary admin-summary-compact">
-                      <div>
-                        <dt>Posições</dt>
-                        <dd>Top: {positions || "—"}</dd>
-                      </div>
-                      <div>
-                        <dt>Benefício</dt>
-                        <dd>{benefitSummary(item)}</dd>
-                      </div>
-                      <div>
-                        <dt>Resgate</dt>
-                        <dd>{redemptionSummary(item)}</dd>
-                      </div>
-                    </dl>
-
-                    {item.reviewNote ? (
-                      <p className="admin-note-prev">Nota: {item.reviewNote}</p>
-                    ) : null}
-
                     {open ? (
-                      <div className="admin-detail">
-                        <dl className="admin-dl">
+                      <>
+                        <dl className="admin-summary admin-summary-compact">
                           <div>
-                            <dt>Regulamento</dt>
-                            <dd>{item.regulationText || "—"}</dd>
+                            <dt>Posições</dt>
+                            <dd>Top: {positions || "—"}</dd>
                           </div>
                           <div>
-                            <dt>Ranking</dt>
-                            <dd>
-                              {item.rankingId ? `#${item.rankingId}` : "—"}
-                            </dd>
+                            <dt>Benefício</dt>
+                            <dd>{benefitSummary(item)}</dd>
+                          </div>
+                          <div>
+                            <dt>Resgate</dt>
+                            <dd>{redemptionSummary(item)}</dd>
                           </div>
                         </dl>
-                      </div>
+                        {item.reviewNote ? (
+                          <p className="admin-note-prev">
+                            Nota: {item.reviewNote}
+                          </p>
+                        ) : null}
+                        <div className="admin-detail">
+                          <dl className="admin-dl">
+                            <div>
+                              <dt>Regulamento</dt>
+                              <dd>{item.regulationText || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt>Ranking</dt>
+                              <dd>
+                                {item.rankingId ? `#${item.rankingId}` : "—"}
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+                      </>
                     ) : null}
 
                     {(decide || activate) && (
@@ -391,9 +465,7 @@ export default function AdminRankingsGestao({ modality, title }) {
                       <button
                         type="button"
                         className="ghost-link admin-btn-ghost"
-                        onClick={() =>
-                          setExpandedId(open ? null : item.id)
-                        }
+                        onClick={() => setExpandedId(open ? null : item.id)}
                       >
                         {open ? "Fechar" : "Detalhe"}
                       </button>
@@ -414,7 +486,7 @@ export default function AdminRankingsGestao({ modality, title }) {
                           disabled={busy}
                           onClick={() => runAction(item.id, "activate")}
                         >
-                          Activar
+                          Ativar
                         </button>
                       ) : null}
                       {decide ? (
@@ -434,14 +506,17 @@ export default function AdminRankingsGestao({ modality, title }) {
             </ul>
           )
         ) : !visibleRankings.length ? (
-          <p className="muted admin-empty">Nenhum ranking nesta fase.</p>
+          <p className="muted admin-empty">
+            Nenhum ranking nesta fase
+            {cityFilter !== "all" ? " para esta cidade" : ""}.
+          </p>
         ) : (
           <ul className="admin-rank-table" role="list">
             {visibleRankings.map((item) => (
               <li key={item.id} className="admin-rank-row">
                 <div className="admin-rank-main">
                   <div className="admin-rank-title-line">
-                    <strong>{item.title}</strong>
+                    <strong>{cityLabel(item)}</strong>
                     <span className={phaseClass(item.phase)}>
                       {item.phaseLabel}
                     </span>
@@ -454,17 +529,6 @@ export default function AdminRankingsGestao({ modality, title }) {
                     )}
                   </div>
                   <p className="muted admin-card-meta">
-                    <span>#{item.id}</span>
-                    <span className="admin-meta-sep" aria-hidden>
-                      ·
-                    </span>
-                    <span>
-                      {item.cityName || "Brasil"}
-                      {item.cityState ? `/${item.cityState}` : ""}
-                    </span>
-                    <span className="admin-meta-sep" aria-hidden>
-                      ·
-                    </span>
                     <span>
                       {formatPeriod(item.periodStart, item.periodEnd)}
                     </span>
