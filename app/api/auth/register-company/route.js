@@ -7,6 +7,7 @@ import {
   findUserById,
   getCurrentUser,
   isCompanyAccount,
+  isRealAdminAccount,
 } from "@/lib/auth";
 import {
   companyUsernameFromCnpj,
@@ -27,6 +28,12 @@ export async function POST(request) {
   }
 
   const sessionUser = await getCurrentUser();
+  if (sessionUser && isRealAdminAccount(sessionUser)) {
+    return jsonError(
+      "Administradores usam a prévia de empresa em /admin, sem converter a conta.",
+      403
+    );
+  }
   const converting =
     Boolean(sessionUser) && !isCompanyAccount(sessionUser);
 
@@ -55,7 +62,7 @@ export async function POST(request) {
 
   const pool = getPool();
   const [cityRows] = await pool.query(
-    `SELECT id, name, state FROM cities WHERE id = ? LIMIT 1`,
+    `SELECT id, nome, estado FROM cidades WHERE id = ? LIMIT 1`,
     [cityId]
   );
   if (!cityRows[0]) {
@@ -88,14 +95,14 @@ export async function POST(request) {
       const username = companyUsernameFromCnpj(cnpj);
       const passwordHash = await hashPassword(password);
       const [userResult] = await conn.query(
-        `INSERT INTO users (username, email, password_hash, account_type)
+        `INSERT INTO usuarios (nome_usuario, email, senha_hash, tipo_conta)
          VALUES (?, ?, ?, 'company')`,
         [username, email, passwordHash]
       );
       userId = userResult.insertId;
       try {
         await conn.query(
-          `INSERT INTO companies (user_id, cnpj, legal_name, logo_url, city_id)
+          `INSERT INTO empresas (usuario_id, cnpj, razao_social, logo_url, cidade_id)
            VALUES (?, ?, ?, ?, ?)`,
           [userId, cnpj, legalName, logoUrl, cityId]
         );
@@ -149,7 +156,7 @@ export async function POST(request) {
     }
     if (error?.code === "ER_BAD_FIELD_ERROR") {
       return jsonError(
-        "Schema desatualizado — rode npm run db:migrate (companies.city_id).",
+        "Schema desatualizado — rode npm run db:migrar (empresas.cidade_id).",
         503
       );
     }

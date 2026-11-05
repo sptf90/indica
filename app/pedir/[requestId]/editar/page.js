@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
 export default function EditarPedidoPage() {
   const { requestId } = useParams();
   const router = useRouter();
-  const [cities, setCities] = useState([]);
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [cityId, setCityId] = useState("");
+  const [state, setState] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [resolving, setResolving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api(`/api/requests/${requestId}`), api("/api/cities")])
-      .then(([req, citiesData]) => {
+    api(`/api/requests/${requestId}`)
+      .then((req) => {
         if (cancelled) return;
         const item = req.item;
         const allowed =
@@ -34,7 +37,8 @@ export default function EditarPedidoPage() {
         setTitle(item.title || "");
         setDetails(item.details || "");
         setCityId(String(item.cityId || ""));
-        setCities(citiesData.cities || []);
+        setState(item.cityState || "");
+        setCityName(item.cityName || "");
         setReady(true);
       })
       .catch((err) => {
@@ -47,10 +51,42 @@ export default function EditarPedidoPage() {
     };
   }, [requestId, router]);
 
+  async function onPlaceChange({ state: nextState, cityName: nextCity }) {
+    setState(nextState);
+    setCityName(nextCity);
+    if (!nextState || !nextCity) {
+      setCityId("");
+      return;
+    }
+    setResolving(true);
+    setError("");
+    try {
+      const data = await api("/api/cities/ensure", {
+        method: "POST",
+        body: JSON.stringify({ name: nextCity, state: nextState }),
+      });
+      setCityId(String(data.city.id));
+    } catch (err) {
+      if (err.status === 401) router.push("/login");
+      else setError(err.message);
+      setCityId("");
+    } finally {
+      setResolving(false);
+    }
+  }
+
   async function onSubmit(event) {
     event.preventDefault();
-    setLoading(true);
     setError("");
+    if (!state || !cityName || !cityId) {
+      setError("Selecione o estado e a cidade.");
+      return;
+    }
+    if (resolving) {
+      setError("Aguarde a cidade ser confirmada.");
+      return;
+    }
+    setLoading(true);
     try {
       await api(`/api/requests/${requestId}`, {
         method: "PATCH",
@@ -112,21 +148,16 @@ export default function EditarPedidoPage() {
             required
           />
         </label>
-        <label>
-          Cidade
-          <select
-            value={cityId}
-            onChange={(e) => setCityId(e.target.value)}
+        <div>
+          <IbgeCityPicker
+            layout="row"
             required
-          >
-            <option value="">Selecione</option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            state={state}
+            cityName={cityName}
+            onChange={onPlaceChange}
+            disabled={resolving || loading}
+          />
+        </div>
         <label>
           Detalhes
           <textarea
@@ -134,13 +165,13 @@ export default function EditarPedidoPage() {
             onChange={(e) => setDetails(e.target.value)}
           />
         </label>
-        <button className="cta" type="submit" disabled={loading}>
-          {loading ? "Salvando…" : "Salvar"}
+        <button className="cta" type="submit" disabled={loading || resolving}>
+          {loading ? "Salvando…" : resolving ? "Confirmando cidade…" : "Salvar"}
         </button>
       </form>
       {error ? <p className="error-box">{error}</p> : null}
       <p className="auth-note">
-        <Link href={`/pedir/${requestId}`}>Voltar</Link>
+        <Link href={`/pedir/${requestId}`}>Cancelar</Link>
       </p>
     </main>
   );

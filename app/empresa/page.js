@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 import {
   formatCnpj,
@@ -107,7 +108,7 @@ export default function EmpresaPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
-  const [cities, setCities] = useState([]);
+  const [resolvingCity, setResolvingCity] = useState(false);
 
   // register form — CNPJ stored as digits only
   const [cnpjDigits, setCnpjDigits] = useState("");
@@ -116,10 +117,14 @@ export default function EmpresaPage() {
   const [password, setPassword] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [registerCityId, setRegisterCityId] = useState("");
+  const [registerState, setRegisterState] = useState("");
+  const [registerCityName, setRegisterCityName] = useState("");
   const [cnpjTouched, setCnpjTouched] = useState(false);
 
   // perfil empresa (cidade de instalação)
   const [profileCityId, setProfileCityId] = useState("");
+  const [profileState, setProfileState] = useState("");
+  const [profileCityName, setProfileCityName] = useState("");
   const [profileLegalName, setProfileLegalName] = useState("");
 
   // sponsorship form
@@ -352,12 +357,6 @@ export default function EmpresaPage() {
     );
   }, [prizePositions]);
 
-  useEffect(() => {
-    api("/api/cities")
-      .then((data) => setCities(data.cities || []))
-      .catch(() => setCities([]));
-  }, []);
-
   const loadDashboard = useCallback(async () => {
     const [me, slotData, reqData, rewardData] = await Promise.all([
       api("/api/empresa"),
@@ -378,8 +377,31 @@ export default function EmpresaPage() {
     setProfileCityId(
       me.company?.cityId != null ? String(me.company.cityId) : ""
     );
+    setProfileState(me.company?.cityState || "");
+    setProfileCityName(me.company?.cityName || "");
     setProfileOpen(!me.company?.cityId);
   }, []);
+
+  async function resolveCity(nextState, nextCity, applyId) {
+    if (!nextState || !nextCity) {
+      applyId("");
+      return;
+    }
+    setResolvingCity(true);
+    setError("");
+    try {
+      const data = await api("/api/cities/ensure", {
+        method: "POST",
+        body: JSON.stringify({ name: nextCity, state: nextState }),
+      });
+      applyId(String(data.city.id));
+    } catch (err) {
+      setError(err.message);
+      applyId("");
+    } finally {
+      setResolvingCity(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -391,6 +413,8 @@ export default function EmpresaPage() {
           setUser(me.user);
           if (me.user?.cityId != null) {
             setRegisterCityId(String(me.user.cityId));
+            setRegisterState(me.user.cityState || "");
+            setRegisterCityName(me.user.cityName || "");
           }
           setMode("guest-register");
           setReady(true);
@@ -434,8 +458,12 @@ export default function EmpresaPage() {
       );
       return;
     }
-    if (!registerCityId) {
-      setError("Selecione a cidade onde a empresa está instalada.");
+    if (!registerCityId || !registerState || !registerCityName) {
+      setError("Selecione o estado e a cidade onde a empresa está instalada.");
+      return;
+    }
+    if (resolvingCity) {
+      setError("Aguarde a cidade ser confirmada.");
       return;
     }
     const name = String(legalName || "").trim();
@@ -501,8 +529,12 @@ export default function EmpresaPage() {
     event.preventDefault();
     setError("");
     setSuccess("");
-    if (!profileCityId) {
-      setError("Selecione a cidade onde a empresa está instalada.");
+    if (!profileCityId || !profileState || !profileCityName) {
+      setError("Selecione o estado e a cidade onde a empresa está instalada.");
+      return;
+    }
+    if (resolvingCity) {
+      setError("Aguarde a cidade ser confirmada.");
       return;
     }
     if (!profileLegalName || profileLegalName.trim().length < 2) {
@@ -523,6 +555,8 @@ export default function EmpresaPage() {
       setProfileCityId(
         data.company?.cityId != null ? String(data.company.cityId) : ""
       );
+      setProfileState(data.company?.cityState || "");
+      setProfileCityName(data.company?.cityName || "");
       setProfileLegalName(data.company?.legalName || "");
       if (data.company?.legalName) {
         setDisplayName((prev) => prev || data.company.legalName);
@@ -952,24 +986,24 @@ export default function EmpresaPage() {
                   required
                 />
               </label>
-              <label className="emp-field">
-                Cidade de instalação
-                <select
-                  value={registerCityId}
-                  onChange={(e) => setRegisterCityId(e.target.value)}
+              <div className="emp-field">
+                <span>Cidade de instalação</span>
+                <IbgeCityPicker
+                  layout="row"
                   required
-                >
-                  <option value="">Selecione</option>
-                  {cities.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  state={registerState}
+                  cityName={registerCityName}
+                  disabled={busy || resolvingCity}
+                  onChange={({ state: nextState, cityName: nextCity }) => {
+                    setRegisterState(nextState);
+                    setRegisterCityName(nextCity);
+                    resolveCity(nextState, nextCity, setRegisterCityId);
+                  }}
+                />
                 <span className="hint">
                   Patrocínio só nesta cidade — não em outras.
                 </span>
-              </label>
+              </div>
               {!converting ? (
                 <>
                   <label className="emp-field">
@@ -1114,22 +1148,22 @@ export default function EmpresaPage() {
                   required
                 />
               </label>
-              <label className="emp-field">
-                Cidade de instalação
-                <select
-                  value={profileCityId}
-                  onChange={(e) => setProfileCityId(e.target.value)}
+              <div className="emp-field">
+                <span>Cidade de instalação</span>
+                <IbgeCityPicker
+                  layout="row"
                   required
-                >
-                  <option value="">Selecione</option>
-                  {cities.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  state={profileState}
+                  cityName={profileCityName}
+                  disabled={busy || resolvingCity}
+                  onChange={({ state: nextState, cityName: nextCity }) => {
+                    setProfileState(nextState);
+                    setProfileCityName(nextCity);
+                    resolveCity(nextState, nextCity, setProfileCityId);
+                  }}
+                />
                 <span className="hint">Fixa o patrocínio só nesta cidade.</span>
-              </label>
+              </div>
             </div>
             <div className="toolbar emp-toolbar">
               <button

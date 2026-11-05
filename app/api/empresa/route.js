@@ -1,4 +1,9 @@
-import { jsonError, publicUser, requireUser } from "@/lib/auth";
+import {
+  isCompanyAccount,
+  jsonError,
+  publicUser,
+  requireUser,
+} from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import {
   findCompanyByUserId,
@@ -10,7 +15,7 @@ export async function GET() {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireUser();
-    if (user.account_type !== "company") {
+    if (!isCompanyAccount(user)) {
       return Response.json({
         user: publicUser(user),
         company: null,
@@ -32,7 +37,7 @@ export async function PATCH(request) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireUser();
-    if (user.account_type !== "company") {
+    if (!isCompanyAccount(user)) {
       return jsonError("Acesso restrito a conta empresarial.", 403);
     }
     const company = await findCompanyByUserId(user.id);
@@ -62,7 +67,7 @@ export async function PATCH(request) {
       }
       const poolCheck = getPool();
       const [cityRows] = await poolCheck.query(
-        `SELECT id FROM cities WHERE id = ? LIMIT 1`,
+        `SELECT id FROM cidades WHERE id = ? LIMIT 1`,
         [cityId]
       );
       if (!cityRows[0]) return jsonError("Cidade inválida.");
@@ -77,13 +82,13 @@ export async function PATCH(request) {
 
     const pool = getPool();
     await pool.query(
-      `UPDATE companies SET legal_name = ?, logo_url = ?, city_id = ? WHERE id = ?`,
+      `UPDATE empresas SET razao_social = ?, logo_url = ?, cidade_id = ? WHERE id = ?`,
       [legalName, logoUrl, cityId, company.id]
     );
     const [rows] = await pool.query(
-      `SELECT co.*, c.name AS city_name, c.state AS city_state
-       FROM companies co
-       LEFT JOIN cities c ON c.id = co.city_id
+      `SELECT co.*, c.nome AS city_name, c.estado AS city_state
+       FROM empresas co
+       LEFT JOIN cidades c ON c.id = co.cidade_id
        WHERE co.id = ?
        LIMIT 1`,
       [company.id]

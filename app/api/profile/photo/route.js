@@ -1,6 +1,12 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { findUserById, jsonError, publicUser, requireUser } from "@/lib/auth";
+import {
+  findUserById,
+  jsonError,
+  publicUser,
+  requireUser,
+  withAdminView,
+} from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import { updateOwnProfile } from "@/lib/profile";
 
@@ -54,7 +60,7 @@ export async function POST(request) {
 
     const photoUrl = `/uploads/${filename}`;
     await updateOwnProfile(user.id, { photoUrl });
-    const updated = await findUserById(user.id);
+    const updated = await withAdminView(await findUserById(user.id));
     return Response.json({ user: publicUser(updated), photoUrl });
   } catch (error) {
     return jsonError(error.message || "Erro", error.status || 500);

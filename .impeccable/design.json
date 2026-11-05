@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-05T22:43:00.000Z",
+  "title": "Design System: GoIndica",
+  "extensions": {
+    "colorMeta": {
+      "brand": {
+        "role": "primary",
+        "displayName": "Brand",
+        "canonical": "#fd5322",
+        "tonalRamp": ["#5c1a0c", "#8a2712", "#b83516", "#e0441a", "#fd5322", "#ff7a52", "#ffb197", "#ffe8dc"]
+      },
+      "brand-deep": {
+        "role": "primary",
+        "displayName": "Brand Deep",
+        "canonical": "#f04718",
+        "tonalRamp": ["#54180a", "#7d2410", "#a63014", "#d03c16", "#f04718", "#f56e48", "#f9a58c", "#fde4dc"]
+      },
+      "brand-soft": {
+        "role": "primary",
+        "displayName": "Brand Soft",
+        "canonical": "#fff1ea",
+        "tonalRamp": ["#5c3d32", "#8a5c4c", "#b87d68", "#d4a090", "#e8c4b6", "#f5dcd2", "#fff1ea", "#fffaf7"]
+      },
+      "brand-mid": {
+        "role": "primary",
+        "displayName": "Brand Mid",
+        "canonical": "#ffd8c6",
+        "tonalRamp": ["#5a3226", "#874c39", "#b56a50", "#e08a6c", "#ffb08e", "#ffd8c6", "#ffe9de", "#fff6f1"]
+      },
+      "peach": {
+        "role": "neutral",
+        "displayName": "Peach",
+        "canonical": "#fff6ef",
+        "tonalRamp": ["#4a3c34", "#6e5a4e", "#94786a", "#b89a88", "#d4bcae", "#ead8cc", "#fff6ef", "#fffdfb"]
+      },
+      "peach-deep": {
+        "role": "neutral",
+        "displayName": "Peach Deep",
+        "canonical": "#ffe8d8",
+        "tonalRamp": ["#4a3226", "#704a38", "#96654c", "#c08a6c", "#e0b090", "#ffe8d8", "#fff3ea", "#fffcf8"]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cream",
+        "canonical": "#fbfaf7",
+        "tonalRamp": ["#2c2a27", "#4a4742", "#6e6a63", "#949089", "#b8b4ad", "#d9d6d0", "#f3ebe4", "#fbfaf7"]
+      },
+      "cream-deep": {
+        "role": "neutral",
+        "displayName": "Cream Deep",
+        "canonical": "#f3ebe4",
+        "tonalRamp": ["#2a241f", "#4a4038", "#6e6056", "#94867a", "#b8aa9e", "#d4c8be", "#f3ebe4", "#fbf7f3"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1c1917",
+        "tonalRamp": ["#1c1917", "#2e2a27", "#4a4540", "#6b6560", "#9c968f", "#c9c4bd", "#ece7e1", "#fbfaf7"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#6b6560",
+        "tonalRamp": ["#2a2724", "#3f3a36", "#57534e", "#6b6560", "#8a847c", "#b4aea6", "#d9d4cc", "#f3f2f1"]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#ece7e1",
+        "tonalRamp": ["#3f3a36", "#6b6560", "#9c968f", "#c4beb6", "#d9d4cc", "#ece7e1", "#f5f1ec", "#fbfaf7"]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#1c1917", "#4a4540", "#9c968f", "#d9d4cc", "#ece7e1", "#f5f1ec", "#fbfaf7", "#ffffff"]
+      },
+      "ok": {
+        "role": "neutral",
+        "displayName": "Ok",
+        "canonical": "#15803d",
+        "tonalRamp": ["#052e16", "#14532d", "#15803d", "#16a34a", "#4ade80", "#86efac", "#dcfce7", "#e9f9ef"]
+      },
+      "ok-bg": {
+        "role": "neutral",
+        "displayName": "Ok Background",
+        "canonical": "#e9f9ef",
+        "tonalRamp": ["#052e16", "#14532d", "#15803d", "#4ade80", "#86efac", "#dcfce7", "#e9f9ef", "#f0fdf4"]
+      },
+      "info": {
+        "role": "neutral",
+        "displayName": "Info",
+        "canonical": "#2563eb",
+        "tonalRamp": ["#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe", "#e8f1ff"]
+      },
+      "info-bg": {
+        "role": "neutral",
+        "displayName": "Info Background",
+        "canonical": "#e8f1ff",
+        "tonalRamp": ["#1e3a8a", "#1d4ed8", "#2563eb", "#60a5fa", "#93c5fd", "#dbeafe", "#e8f1ff", "#eff6ff"]
+      },
+      "warn": {
+        "role": "neutral",
+        "displayName": "Warn",
+        "canonical": "#9a3412",
+        "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#fb923c", "#fed7aa", "#fff7ed"]
+      },
+      "bad": {
+        "role": "neutral",
+        "displayName": "Bad",
+        "canonical": "#991b1b",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#dc2626", "#f87171", "#fecaca", "#fee2e2", "#fef2f2"]
+      },
+      "gold": {
+        "role": "neutral",
+        "displayName": "Gold",
+        "canonical": "#ca8a04",
+        "tonalRamp": ["#422006", "#713f12", "#a16207", "#ca8a04", "#eab308", "#fde047", "#fef9c3", "#fefce8"]
+      },
+      "purple": {
+        "role": "neutral",
+        "displayName": "Purple",
+        "canonical": "#7c3aed",
+        "tonalRamp": ["#3b0764", "#5b21b6", "#7c3aed", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ede9fe", "#f5f3ff"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Default h1 outside densified flow heroes. Sora 700, clamp 1.7–2.35rem."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "flow-title in-app page intro. Sora 750, clamp 1.45–1.95rem."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section h2 and card titles in Sora."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "UI copy in Plus Jakarta Sans at the 15px root."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Pill CTAs, nav, form labels, chips."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-soft",
+        "value": "0 6px 18px rgba(28, 25, 23, 0.035)",
+        "purpose": "Resting cards, flow-hero, empty states."
+      },
+      {
+        "name": "shadow",
+        "value": "0 10px 28px rgba(28, 25, 23, 0.045)",
+        "purpose": "Panels and ambient lift."
+      },
+      {
+        "name": "shadow-lift",
+        "value": "0 16px 40px rgba(28, 25, 23, 0.08)",
+        "purpose": "Card hover elevation."
+      },
+      {
+        "name": "brand-glow",
+        "value": "0 10px 22px rgba(253, 83, 34, 0.22)",
+        "purpose": "Resting solid pill CTAs."
+      },
+      {
+        "name": "brand-glow-hover",
+        "value": "0 14px 28px rgba(253, 83, 34, 0.28)",
+        "purpose": "Hover solid pill CTAs."
+      },
+      {
+        "name": "focus-halo",
+        "value": "0 0 0 4px rgba(253, 83, 34, 0.12)",
+        "purpose": "Intended text-field focus ring."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "0.22s ease",
+        "purpose": "Pill CTA background, shadow, transform, and filter."
+      },
+      {
+        "name": "ease-nav",
+        "value": "0.2s ease",
+        "purpose": "Sidebar link color/background and card hover."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "0.28s ease",
+        "purpose": "Mobile sidebar slide and backdrop fade."
+      },
+      {
+        "name": "hover-lift",
+        "value": "translateY(-1.5px)",
+        "purpose": "Primary button and card hover displacement."
+      },
+      {
+        "name": "drift",
+        "value": "14s ease-in-out infinite alternate",
+        "purpose": "Decorative hero ring. Disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "floaty",
+        "value": "5.5s ease-in-out infinite",
+        "purpose": "Hero illustration bob. Disabled under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      { "name": "flow-stack", "value": "720px" },
+      { "name": "sidebar-overlay", "value": "860px" },
+      { "name": "cta-stack", "value": "900px" },
+      { "name": "metric-scroll", "value": "1100px" },
+      { "name": "narrow", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pill brand CTA for primary in-app actions.",
+      "html": "<button class=\"ds-btn-primary\">Pedir uma indicação <span class=\"ds-btn-arrow\">→</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.78rem 1.35rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-weight: 650; font-size: 0.9rem; letter-spacing: -0.01em; background: var(--brand); color: #fff; border: 1.5px solid var(--brand); box-shadow: 0 10px 22px rgba(253, 83, 34, 0.22); cursor: pointer; transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease; } .ds-btn-primary:hover { filter: brightness(1.045); transform: translateY(-1.5px); box-shadow: 0 14px 28px rgba(253, 83, 34, 0.28); } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; } .ds-btn-arrow { display: inline-block; transition: transform 0.22s ease; } .ds-btn-primary:hover .ds-btn-arrow { transform: translateX(2px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "White pill with brand stroke for secondary actions.",
+      "html": "<button class=\"ds-btn-outline\">Ver pedidos</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.78rem 1.35rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-weight: 650; font-size: 0.9rem; letter-spacing: -0.01em; background: rgba(255, 255, 255, 0.92); color: var(--brand); border: 1.5px solid var(--brand); box-shadow: 0 4px 14px rgba(253, 83, 34, 0.06); cursor: pointer; transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease; } .ds-btn-outline:hover { background: #fff; transform: translateY(-1.5px); box-shadow: 0 10px 22px rgba(253, 83, 34, 0.12); } .ds-btn-outline:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Flow CTA",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tighter in-flow ghost pill used next to flow-cta.",
+      "html": "<button class=\"ds-btn-ghost\">Filtrar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-height: 2.5rem; padding: 0.55rem 1rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: 0.88rem; font-weight: 650; letter-spacing: -0.01em; background: #fff; border: 1.5px solid rgba(253, 83, 34, 0.22); color: var(--brand-deep); cursor: pointer; transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease; } .ds-btn-ghost:hover { background: var(--brand-soft); border-color: rgba(253, 83, 34, 0.4); transform: translateY(-1px); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White 12px field with the intended brand focus halo.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Cidade</span><input class=\"ds-input\" type=\"text\" placeholder=\"Buscar cidade\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 0.35rem; font-family: var(--font-sans); } .ds-field-label { font-size: 0.92rem; font-weight: 600; color: var(--ink); } .ds-input { font: inherit; padding: 0.7rem 0.8rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); } .ds-input:hover { border-color: rgba(253, 83, 34, 0.28); } .ds-input:focus { outline: none; background: #fff; border-color: rgba(253, 83, 34, 0.55); box-shadow: 0 0 0 4px rgba(253, 83, 34, 0.12); }"
+    },
+    {
+      "name": "Flow Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Dense list card for pedidos and indicações.",
+      "html": "<a class=\"ds-card\" href=\"#\"><div class=\"ds-card-top\"><h3 class=\"ds-card-title\">Indicação de encanador</h3><span class=\"ds-status\">Aberta</span></div><div class=\"ds-card-meta\"><span class=\"ds-card-loc\">Centro · São Paulo</span><span class=\"ds-card-cta\">Ver pedido</span></div></a>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 0.45rem; padding: var(--card-pad); background: var(--card); border: 1px solid rgba(236, 231, 225, 0.95); border-radius: 14px; box-shadow: var(--shadow-soft); color: inherit; text-decoration: none; font-family: var(--font-sans); transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; } .ds-card:hover { transform: translateY(-1.5px); border-color: rgba(253, 83, 34, 0.22); box-shadow: var(--shadow-lift); } .ds-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; } .ds-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; } .ds-card-title { margin: 0; font-family: var(--font-display); font-size: 1.02rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.28; color: var(--ink); } .ds-status { display: inline-flex; align-items: center; padding: 0.26rem 0.62rem; border-radius: var(--radius-pill); background: var(--ok-bg); color: var(--ok); font-size: 0.72rem; font-weight: 700; } .ds-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; } .ds-card-loc { color: var(--muted); font-size: 0.84rem; font-weight: 550; } .ds-card-cta { color: var(--brand); font-size: 0.84rem; font-weight: 700; letter-spacing: -0.01em; } .ds-card:hover .ds-card-cta { transform: translateX(2px); display: inline-block; }"
+    },
+    {
+      "name": "Flow Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Peach-bordered tip chip used inside flow-hero.",
+      "html": "<span class=\"ds-chip\">Respostas de gente real</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 0.32rem 0.65rem; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.82); border: 1px solid rgba(253, 83, 34, 0.14); color: var(--brand-deep); font-family: var(--font-sans); font-size: 0.76rem; font-weight: 650; letter-spacing: -0.01em; box-shadow: 0 2px 8px rgba(253, 83, 34, 0.05); }"
+    },
+    {
+      "name": "Flow Hero",
+      "kind": "custom",
+      "refersTo": "flow-hero",
+      "description": "Canonical in-app page intro: peach wash, Sora title, muted lead, art well.",
+      "html": "<section class=\"ds-hero\"><div class=\"ds-hero-copy\"><h1 class=\"ds-hero-title\">Peça o que precisa na <span>sua cidade</span></h1><p class=\"ds-hero-lead\">Publique um pedido e receba indicações de gente real.</p><div class=\"ds-hero-tips\"><span class=\"ds-chip\">Local</span><span class=\"ds-chip\">Com reputação</span></div></div><div class=\"ds-hero-art\"><div class=\"ds-hero-panel\"></div></div></section>",
+      "css": ".ds-hero { display: grid; grid-template-columns: 1.35fr 0.75fr; gap: 0.85rem; align-items: center; padding: var(--hero-pad); border-radius: 18px; background: radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.7), transparent 42%), linear-gradient(145deg, #fff7f0 0%, #ffe9da 58%, #fff4eb 100%); border: 1px solid rgba(253, 83, 34, 0.1); box-shadow: var(--shadow-soft); overflow: hidden; font-family: var(--font-sans); } .ds-hero-title { margin: 0; font-family: var(--font-display); font-size: clamp(1.45rem, 2.8vw, 1.95rem); font-weight: 750; letter-spacing: -0.038em; line-height: 1.15; color: var(--ink); } .ds-hero-title span { color: var(--brand); } .ds-hero-lead { margin: 0.4rem 0 0; color: var(--muted); line-height: 1.45; font-size: 0.9rem; max-width: 48ch; } .ds-hero-tips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.7rem 0 0; } .ds-hero-art { display: flex; min-height: 8.5rem; } .ds-hero-panel { flex: 1; border-radius: 14px; background: radial-gradient(circle at 62% 28%, rgba(255, 255, 255, 0.65), transparent 52%), linear-gradient(165deg, #ffe4d2 0%, #fff3ea 70%, #fff8f2 100%); min-height: 8.5rem; } .ds-chip { display: inline-flex; align-items: center; padding: 0.32rem 0.65rem; border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.82); border: 1px solid rgba(253, 83, 34, 0.14); color: var(--brand-deep); font-size: 0.76rem; font-weight: 650; }"
+    },
+    {
+      "name": "Sidebar Link",
+      "kind": "nav",
+      "refersTo": "sidebar-link-active",
+      "description": "Auth sidebar item; active uses brand-soft wash.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 10v10h14V10\"/></svg>Início</a><a class=\"ds-nav-link\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8\"/><path d=\"M8 12h8\"/></svg>Pedir uma indicação</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 0.12rem; width: 15.5rem; padding: 0.7rem; background: #fff; border: 1px solid rgba(236, 231, 225, 0.95); border-radius: 16px; font-family: var(--font-sans); } .ds-nav-link { display: flex; align-items: center; gap: 0.7rem; padding: 0.68rem 0.8rem; border-radius: 12px; color: #3f3a36; font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: background 0.2s ease, color 0.2s ease; } .ds-nav-link:hover { background: rgba(240, 90, 40, 0.07); } .ds-nav-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; } .ds-nav-link-active { background: var(--brand-soft); color: var(--brand); font-weight: 650; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Cream/Peach Neighborhood Marketplace Density",
+    "overview": "GoIndica is an Operate-mode productive app: a local indication marketplace that people work in, not a campaign they visit. The incumbent world is a warm cream/peach neighborhood shop — paper-cream canvas, peach hero washes, a single citrus-orange brand voice, Sora for display, Plus Jakarta Sans for UI — packed at auth-workspace density. Brand lives in precise details (pill CTAs, selected nav, status chips), not in full-bleed marketing color.\n\nThis file records the shipped `:root` system in `app/globals.css` and the shared shell/flow primitives. It does not invent a new identity. Page-local copies (`pedir-hero`, `admin-hero`, `emp-hero`, and sibling page heroes) currently fork the same peach language; they should converge onto the shared tokens and `flow-hero` / card / pill patterns rather than keep private hex and padding.",
+    "keyCharacteristics": [
+      "Cream canvas (`--cream`) with white cards and peach hero panels",
+      "One accent: `--brand` / `--brand-deep`; semantic green/blue/red are status only",
+      "Sora for titles, Plus Jakarta Sans for body and chrome",
+      "Pill primary actions (`--radius-pill`) and 16px surface radius (`--radius`)",
+      "Dense auth workspace: `--content-max` 72rem, tight `--page-pad` / `--section-gap` / `--card-gap`",
+      "Sidebar + frosted topbar shell; flow-hero as the in-app page intro"
+    ],
+    "rules": [
+      {
+        "name": "The Token Authority Rule",
+        "body": "New UI consumes `:root` (`--brand`, `--peach`, `--cream`, `--line`, `--radius`, `--hero-pad`, `--card-pad`). Do not introduce a parallel hex (including `#ec5e27`) when `--brand` already exists.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "Chromatic action and identity are Brand. Semantic colors mark state. Peach and cream are atmosphere, not extra accents.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Family Rule",
+        "body": "Sora for display and titles; Plus Jakarta Sans for everything else. Do not add a third family for a single surface.",
+        "section": "typography"
+      },
+      {
+        "name": "The Soft Lift Rule",
+        "body": "Surfaces are nearly flat at rest. Motion is a short ease (0.2–0.22s), 1–1.5px rise, and a softer/larger shadow. No hard offset shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do consume `:root` tokens (`--brand`, `--cream`, `--peach`, `--radius`, `--radius-pill`, `--content-max`, `--page-pad`, `--hero-pad`, `--card-pad`) for new screens.",
+      "Do use pill Brand CTAs with the brand glow and 1–1.5px hover lift.",
+      "Do set auth pages in the sidebar + topbar shell at 72rem (84rem only when the page is already `page-wide`).",
+      "Do introduce in-app pages with `flow-hero` (peach wash, Sora title, muted lead, optional chips/art) instead of a new hero class.",
+      "Do keep cards white, hairlined, softly lifted; status in semantic chips."
+    ],
+    "donts": [
+      "Don't mint a parallel orange (`#ec5e27` or marketing `--mkt-brand`) inside the auth workspace when `--brand` is the source of truth.",
+      "Don't add a second display font or replace Sora / Plus Jakarta Sans.",
+      "Don't use square or 4–8px buttons for primary actions — pills are the action shape.",
+      "Don't restore landing-scale padding or a marketing canvas (`#fdfdf1`) inside `workspace-body`.",
+      "Don't treat peach as a second brand or flood a view with `--brand` fill; Brand is the accent, cream is the room."
+    ]
+  }
+}

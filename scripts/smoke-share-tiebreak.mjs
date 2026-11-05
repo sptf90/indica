@@ -83,12 +83,12 @@ function cookieJar(setCookieList, previous = "") {
 try {
   // Preferir ranking semanal open já seedado e visível
   const [openRank] = await conn.query(
-    `SELECT r.id, r.city_id, r.period_start, r.period_end
+    `SELECT r.id, r.cidade_id, r.periodo_inicio, r.periodo_fim
      FROM rankings r
      WHERE r.status = 'open'
-       AND r.period_start <= UTC_TIMESTAMP()
-       AND r.period_end > UTC_TIMESTAMP()
-       AND r.city_id IS NOT NULL
+       AND r.periodo_inicio <= UTC_TIMESTAMP()
+       AND r.periodo_fim > UTC_TIMESTAMP()
+       AND r.cidade_id IS NOT NULL
      ORDER BY r.id ASC
      LIMIT 1`
   );
@@ -126,8 +126,8 @@ try {
   // Enroll both (direct insert se API bloquear por limite 2+1)
   for (const uid of [idA, idB]) {
     await conn.query(
-      `INSERT IGNORE INTO ranking_participations
-        (ranking_id, user_id, enrolled_at, balance, valid_count_in_period, status)
+      `INSERT IGNORE INTO ranking_participacoes
+        (ranking_id, usuario_id, inscrito_em, saldo, contagem_validas_periodo, status)
        VALUES (?, ?, UTC_TIMESTAMP(), 0, 0, 'active')`,
       [rankingId, uid]
     );
@@ -135,24 +135,24 @@ try {
 
   // Equal points + equal valid_count
   await conn.query(
-    `UPDATE ranking_participations
-     SET balance = 50, valid_count_in_period = 2
-     WHERE ranking_id = ? AND user_id IN (?, ?)`,
+    `UPDATE ranking_participacoes
+     SET saldo = 50, contagem_validas_periodo = 2
+     WHERE ranking_id = ? AND usuario_id IN (?, ?)`,
     [rankingId, idA, idB]
   );
-  await conn.query(`UPDATE users SET share_visit_count = 0 WHERE id IN (?, ?)`, [
+  await conn.query(`UPDATE usuarios SET contagem_visitas_compartilhamento = 0 WHERE id IN (?, ?)`, [
     idA,
     idB,
   ]);
-  await conn.query(`DELETE FROM share_visits WHERE owner_user_id IN (?, ?)`, [idA, idB]);
+  await conn.query(`DELETE FROM visitas_compartilhamento WHERE dono_usuario_id IN (?, ?)`, [idA, idB]);
 
   // Before visits: B should be ahead if enrolled earlier? We force enrolled_at so A first then B
   await conn.query(
-    `UPDATE ranking_participations SET enrolled_at = '2026-01-01 00:00:00' WHERE ranking_id = ? AND user_id = ?`,
+    `UPDATE ranking_participacoes SET inscrito_em = '2026-01-01 00:00:00' WHERE ranking_id = ? AND usuario_id = ?`,
     [rankingId, idA]
   );
   await conn.query(
-    `UPDATE ranking_participations SET enrolled_at = '2026-01-02 00:00:00' WHERE ranking_id = ? AND user_id = ?`,
+    `UPDATE ranking_participacoes SET inscrito_em = '2026-01-02 00:00:00' WHERE ranking_id = ? AND usuario_id = ?`,
     [rankingId, idB]
   );
 
@@ -186,7 +186,7 @@ try {
   // Owner visiting own link shouldn't count (session + visitor)
   const beforeOwner = Number(
     (
-      await conn.query(`SELECT share_visit_count FROM users WHERE id = ?`, [idA])
+      await conn.query(`SELECT contagem_visitas_compartilhamento FROM usuarios WHERE id = ?`, [idA])
     )[0][0].share_visit_count
   );
   await fetch(`${BASE}/r/${shareCodeA}`, {
@@ -195,7 +195,7 @@ try {
   });
   const afterOwner = Number(
     (
-      await conn.query(`SELECT share_visit_count FROM users WHERE id = ?`, [idA])
+      await conn.query(`SELECT contagem_visitas_compartilhamento FROM usuarios WHERE id = ?`, [idA])
     )[0][0].share_visit_count
   );
   assert(
@@ -204,7 +204,7 @@ try {
   );
 
   const [countRows] = await conn.query(
-    `SELECT share_visit_count FROM users WHERE id = ?`,
+    `SELECT contagem_visitas_compartilhamento FROM usuarios WHERE id = ?`,
     [idA]
   );
   assert(
@@ -233,7 +233,7 @@ try {
   assert(Number(shareA) === 3, `standing shareVisitCount ${shareA}`);
 
   // Give B more visits → B sobe
-  const [codeB] = await conn.query(`SELECT share_code FROM users WHERE id = ?`, [idB]);
+  const [codeB] = await conn.query(`SELECT codigo_compartilhamento FROM usuarios WHERE id = ?`, [idB]);
   for (let i = 0; i < 5; i += 1) {
     await fetch(`${BASE}/r/${codeB[0].share_code}`, {
       redirect: "manual",

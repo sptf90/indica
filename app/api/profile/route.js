@@ -3,6 +3,7 @@ import {
   jsonError,
   publicUser,
   requireUser,
+  withAdminView,
 } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import { updateOwnProfile } from "@/lib/profile";
@@ -32,7 +33,7 @@ export async function PATCH(request) {
     }
     await updateOwnProfile(user.id, payload);
 
-    const updated = await findUserById(user.id);
+    const updated = await withAdminView(await findUserById(user.id));
     return Response.json({ user: publicUser(updated) });
   } catch (error) {
     return jsonError(error.message || "Erro", error.status || 500);

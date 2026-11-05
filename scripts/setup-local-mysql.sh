@@ -92,7 +92,7 @@ mysql --protocol=TCP -h"$MYSQL_HOST" -P"$MYSQL_PORT" -u"$MYSQL_USER" -p"$MYSQL_P
 
 echo "==> Aplicando schema..."
 cd "$ROOT"
-npm run db:schema
+npm run db:migrar
 
 echo "OK. MySQL ativo, DB pronto, schema aplicado."
 echo "Próximo passo: npm run dev"

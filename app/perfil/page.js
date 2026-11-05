@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import ReputationBadge from "@/components/ReputationBadge";
 import { requestTutorialRestart } from "@/components/ProductTour";
 import { api } from "@/lib/client-api";
@@ -16,11 +17,13 @@ function formatDelta(delta) {
 export default function PerfilPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [cities, setCities] = useState([]);
   const [history, setHistory] = useState([]);
   const [username, setUsername] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [cityId, setCityId] = useState("");
+  const [cityState, setCityState] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [resolvingCity, setResolvingCity] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,19 +40,14 @@ export default function PerfilPage() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      api("/api/auth/me"),
-      api("/api/cities"),
-      api("/api/profile/reputation-history"),
-    ])
-      .then(([me, citiesData, hist]) => {
+    Promise.all([api("/api/auth/me"), api("/api/profile/reputation-history")])
+      .then(([me, hist]) => {
         setUser(me.user);
         setUsername(me.user.username || "");
         setPhotoUrl(me.user.photoUrl || "");
-        setCityId(
-          me.user.cityId != null ? String(me.user.cityId) : ""
-        );
-        setCities(citiesData.cities || []);
+        setCityId(me.user.cityId != null ? String(me.user.cityId) : "");
+        setCityState(me.user.cityState || "");
+        setCityName(me.user.cityName || "");
         setHistory(hist.items || []);
       })
       .catch((err) => {
@@ -58,10 +56,41 @@ export default function PerfilPage() {
       });
   }, [router]);
 
+  async function onPlaceChange({ state: nextState, cityName: nextCity }) {
+    setCityState(nextState);
+    setCityName(nextCity);
+    if (!nextState || !nextCity) {
+      setCityId("");
+      return;
+    }
+    setResolvingCity(true);
+    setError("");
+    try {
+      const data = await api("/api/cities/ensure", {
+        method: "POST",
+        body: JSON.stringify({ name: nextCity, state: nextState }),
+      });
+      setCityId(String(data.city.id));
+    } catch (err) {
+      setError(err.message);
+      setCityId("");
+    } finally {
+      setResolvingCity(false);
+    }
+  }
+
   async function onSave(event) {
     event.preventDefault();
     setError("");
     setSuccess("");
+    if (!cityState || !cityName || !cityId) {
+      setError("Selecione o estado e a cidade.");
+      return;
+    }
+    if (resolvingCity) {
+      setError("Aguarde a cidade ser confirmada.");
+      return;
+    }
     setSaving(true);
     try {
       const data = await api("/api/profile", {
@@ -69,15 +98,15 @@ export default function PerfilPage() {
         body: JSON.stringify({
           username: username.trim(),
           photoUrl: photoUrl.trim() || null,
-          cityId: cityId ? Number(cityId) : null,
+          cityId: Number(cityId),
         }),
       });
       setUser(data.user);
       setUsername(data.user.username || "");
       setPhotoUrl(data.user.photoUrl || "");
-      setCityId(
-        data.user.cityId != null ? String(data.user.cityId) : ""
-      );
+      setCityId(data.user.cityId != null ? String(data.user.cityId) : "");
+      setCityState(data.user.cityState || "");
+      setCityName(data.user.cityName || "");
       setSuccess("Perfil atualizado.");
     } catch (err) {
       setError(err.message);
@@ -306,25 +335,28 @@ export default function PerfilPage() {
               />
             </label>
 
-            <label>
-              Cidade
-              <select
-                value={cityId}
-                onChange={(e) => setCityId(e.target.value)}
+            <div>
+              <IbgeCityPicker
+                layout="row"
                 required
-              >
-                <option value="">Selecione</option>
-                {cities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                state={cityState}
+                cityName={cityName}
+                onChange={onPlaceChange}
+                disabled={saving || resolvingCity}
+              />
+            </div>
 
             <div className="toolbar">
-              <button className="pill-cta" type="submit" disabled={saving}>
-                {saving ? "Salvando…" : "Salvar alterações"}
+              <button
+                className="pill-cta"
+                type="submit"
+                disabled={saving || resolvingCity}
+              >
+                {saving
+                  ? "Salvando…"
+                  : resolvingCity
+                    ? "Confirmando cidade…"
+                    : "Salvar alterações"}
               </button>
               <Link className="pill-outline" href="/perfil/reputacao">
                 Histórico de reputação

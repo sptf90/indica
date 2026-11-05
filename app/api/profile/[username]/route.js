@@ -16,12 +16,12 @@ export async function GET(_request, { params }) {
 
     const pool = getPool();
     const [rows] = await pool.query(
-      `SELECT u.id, u.username, u.photo_url, u.city_id, u.reputation,
-              u.valid_indication_count, u.selected_and_evaluated_count,
-              c.name AS city_name, c.state AS city_state
-       FROM users u
-       LEFT JOIN cities c ON c.id = u.city_id
-       WHERE u.username = ? AND u.deleted_at IS NULL
+      `SELECT u.id, u.nome_usuario, u.foto_url, u.cidade_id, u.reputacao,
+              u.contagem_indicacoes_validas, u.contagem_selecionadas_avaliadas,
+              c.nome AS city_name, c.estado AS city_state
+       FROM usuarios u
+       LEFT JOIN cidades c ON c.id = u.cidade_id
+       WHERE u.nome_usuario = ? AND u.excluido_em IS NULL
        LIMIT 1`,
       [handle]
     );

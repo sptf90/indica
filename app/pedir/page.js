@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
 const DRAFT_KEY = "indica_request_draft";
@@ -16,17 +17,18 @@ const TIPS = [
 
 export default function PedirPage() {
   const router = useRouter();
-  const [cities, setCities] = useState([]);
   const [me, setMe] = useState(null);
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [cityId, setCityId] = useState("");
+  const [state, setState] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [resolving, setResolving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api("/api/cities"), api("/api/auth/me")])
-      .then(([citiesData, meData]) => {
-        setCities(citiesData.cities || []);
+    api("/api/auth/me")
+      .then((meData) => {
         setMe(meData.user);
         const draft =
           typeof window !== "undefined"
@@ -38,18 +40,48 @@ export default function PedirPage() {
             setTitle(parsed.title || "");
             setDetails(parsed.details || "");
             setCityId(String(parsed.cityId || meData.user?.cityId || ""));
+            setState(parsed.state || meData.user?.cityState || "");
+            setCityName(parsed.cityName || meData.user?.cityName || "");
             return;
           } catch {
             // ignore
           }
         }
         setCityId(String(meData.user?.cityId || ""));
+        setState(meData.user?.cityState || "");
+        setCityName(meData.user?.cityName || "");
       })
       .catch((err) => {
         if (err.status === 401) router.push("/login");
         else setError(err.message);
       });
   }, [router]);
+
+  async function onPlaceChange({ state: nextState, cityName: nextCity }) {
+    setState(nextState);
+    setCityName(nextCity);
+
+    if (!nextState || !nextCity) {
+      setCityId("");
+      return;
+    }
+
+    setResolving(true);
+    setError("");
+    try {
+      const data = await api("/api/cities/ensure", {
+        method: "POST",
+        body: JSON.stringify({ name: nextCity, state: nextState }),
+      });
+      setCityId(String(data.city.id));
+    } catch (err) {
+      if (err.status === 401) router.push("/login");
+      else setError(err.message);
+      setCityId("");
+    } finally {
+      setResolving(false);
+    }
+  }
 
   function goPreview(event) {
     event.preventDefault();
@@ -58,8 +90,12 @@ export default function PedirPage() {
       setError("Título obrigatório.");
       return;
     }
-    if (!cityId) {
-      setError("Cidade obrigatória.");
+    if (!state || !cityName || !cityId) {
+      setError("Selecione o estado e a cidade.");
+      return;
+    }
+    if (resolving) {
+      setError("Aguarde a cidade ser confirmada.");
       return;
     }
     sessionStorage.setItem(
@@ -68,6 +104,9 @@ export default function PedirPage() {
         title: title.trim(),
         details: details.trim(),
         cityId: Number(cityId),
+        state,
+        cityName,
+        cityLabel: `${cityName} (${state})`,
       })
     );
     router.push("/pedir/preview");
@@ -79,8 +118,7 @@ export default function PedirPage() {
         <div className="pedir-hero-copy">
           <p className="pedir-kicker">Novo pedido</p>
           <h1 className="pedir-title">
-            Conta o que você procura —{" "}
-            <span>a galera indica</span>
+            Conta o que você procura — <span>a galera indica</span>
           </h1>
           <p className="pedir-lead">
             Um título claro e a cidade já bastam. Detalhes ajudam a receber
@@ -134,29 +172,29 @@ export default function PedirPage() {
             </span>
           </label>
 
-          <label className="pedir-field">
+          <div className="pedir-field">
             <span className="pedir-label">
-              Cidade
+              Local
               <span className="pedir-req">obrigatório</span>
             </span>
-            <select
-              value={cityId}
-              onChange={(e) => setCityId(e.target.value)}
+            <IbgeCityPicker
+              layout="row"
               required
-            >
-              <option value="">Selecione</option>
-              {cities.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+              state={state}
+              cityName={cityName}
+              onChange={onPlaceChange}
+              disabled={resolving}
+            />
             {me?.cityId ? (
               <span className="pedir-field-hint">
                 Padrão: cidade do seu perfil
               </span>
-            ) : null}
-          </label>
+            ) : (
+              <span className="pedir-field-hint">
+                Estado à esquerda, cidade à direita
+              </span>
+            )}
+          </div>
 
           <label className="pedir-field">
             <span className="pedir-label">
@@ -171,11 +209,17 @@ export default function PedirPage() {
           </label>
 
           <div className="pedir-actions">
-            <button className="pedir-submit" type="submit">
-              Pré-visualizar
-              <span className="btn-arrow" aria-hidden>
-                →
-              </span>
+            <button
+              className="pedir-submit"
+              type="submit"
+              disabled={resolving}
+            >
+              {resolving ? "Confirmando cidade…" : "Pré-visualizar"}
+              {!resolving ? (
+                <span className="btn-arrow" aria-hidden>
+                  →
+                </span>
+              ) : null}
             </button>
           </div>
         </form>

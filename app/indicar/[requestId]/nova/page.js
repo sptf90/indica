@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import PlaceSearchPicker from "@/components/PlaceSearchPicker";
 import { api } from "@/lib/client-api";
 
 function statusTone(status) {
@@ -53,6 +54,8 @@ export default function NovaIndicacaoPage() {
   const [step, setStep] = useState("form");
   const [description, setDescription] = useState("");
   const [links, setLinks] = useState([""]);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [placesUnavailable, setPlacesUnavailable] = useState(false);
   const [placeName, setPlaceName] = useState("");
   const [placeAddress, setPlaceAddress] = useState("");
   const [placeSource, setPlaceSource] = useState("manual");
@@ -61,6 +64,10 @@ export default function NovaIndicacaoPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const onPlacesUnavailable = useCallback(() => {
+    setPlacesUnavailable(true);
+  }, []);
 
   useEffect(() => {
     api(`/api/indications/eligible/${requestId}`)
@@ -116,6 +123,32 @@ export default function NovaIndicacaoPage() {
     }
   }
 
+  function buildPlacePayload() {
+    if (selectedPlace?.name && selectedPlace?.address) {
+      return {
+        source: "google_maps",
+        placeId: selectedPlace.placeId || null,
+        name: selectedPlace.name.trim(),
+        address: selectedPlace.address.trim(),
+        mapsUrl: selectedPlace.mapsUrl || null,
+      };
+    }
+    if (placeName.trim() && placeAddress.trim()) {
+      return {
+        source:
+          placeSource === "google_maps" || isGoogleMapsUrl(placeAddress)
+            ? "google_maps"
+            : "manual",
+        name: placeName.trim(),
+        address: placeAddress.trim(),
+        mapsUrl:
+          placeMapsUrl.trim() ||
+          (isGoogleMapsUrl(placeAddress) ? placeAddress.trim() : null),
+      };
+    }
+    return null;
+  }
+
   function goPreview(event) {
     event.preventDefault();
     setError("");
@@ -127,11 +160,13 @@ export default function NovaIndicacaoPage() {
       setError("Descrição deve ter no máximo 500 caracteres.");
       return;
     }
-    const hasName = Boolean(placeName.trim());
-    const hasAddress = Boolean(placeAddress.trim());
-    if (hasName !== hasAddress) {
-      setError("Local exige nome e endereço (ou link do Maps).");
-      return;
+    if (placesUnavailable) {
+      const hasName = Boolean(placeName.trim());
+      const hasAddress = Boolean(placeAddress.trim());
+      if (hasName !== hasAddress) {
+        setError("Local exige nome e endereço (ou link do Maps).");
+        return;
+      }
     }
     setStep("preview");
   }
@@ -140,27 +175,13 @@ export default function NovaIndicacaoPage() {
     setLoading(true);
     setError("");
     try {
-      const place =
-        placeName.trim() && placeAddress.trim()
-          ? {
-              source:
-                placeSource === "google_maps" || isGoogleMapsUrl(placeAddress)
-                  ? "google_maps"
-                  : "manual",
-              name: placeName.trim(),
-              address: placeAddress.trim(),
-              mapsUrl:
-                placeMapsUrl.trim() ||
-                (isGoogleMapsUrl(placeAddress) ? placeAddress.trim() : null),
-            }
-          : null;
       await api("/api/indications", {
         method: "POST",
         body: JSON.stringify({
           requestId: Number(requestId),
           description: description.trim(),
           links: cleanLinks(),
-          place,
+          place: buildPlacePayload(),
         }),
       });
       setOk("Indicação enviada com sucesso");
@@ -177,6 +198,7 @@ export default function NovaIndicacaoPage() {
   }
 
   const tone = statusTone(request?.status);
+  const previewPlace = buildPlacePayload();
 
   if (step === "preview") {
     return (
@@ -216,14 +238,26 @@ export default function NovaIndicacaoPage() {
                 ))}
               </ul>
             ) : null}
-            {placeName && placeAddress ? (
-              <p className="indicar-n-preview-place">
-                Local
-                {placeSource === "google_maps" || isGoogleMapsUrl(placeAddress)
-                  ? " (Maps)"
-                  : ""}
-                : {placeName} — {placeAddress}
-              </p>
+            {previewPlace ? (
+              <div className="indicar-n-preview-place-card">
+                {selectedPlace?.photoName ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="indicar-n-preview-place-photo"
+                    src={`/api/places/photo?name=${encodeURIComponent(selectedPlace.photoName)}&maxWidthPx=160`}
+                    alt=""
+                    width={72}
+                    height={72}
+                  />
+                ) : null}
+                <div>
+                  <p className="indicar-n-preview-place-label">Local</p>
+                  <p className="indicar-n-preview-place-name">{previewPlace.name}</p>
+                  <p className="indicar-n-preview-place-addr">
+                    {previewPlace.address}
+                  </p>
+                </div>
+              </div>
             ) : null}
           </div>
           <div className="indicar-n-actions">
@@ -331,57 +365,76 @@ export default function NovaIndicacaoPage() {
             <legend>
               Local <span className="indicar-n-opt">opcional</span>
             </legend>
-            <p className="indicar-n-group-hint">
-              Nome e endereço — ou link do Google Maps (sem API)
-            </p>
-            <div className="indicar-n-maps-row">
-              <button
-                className="indicar-n-maps-btn"
-                type="button"
-                onClick={openMaps}
-              >
-                Abrir no Maps
-              </button>
-              <button
-                className="indicar-n-maps-btn"
-                type="button"
-                onClick={pasteMapsLink}
-              >
-                Colar link do Maps
-              </button>
-            </div>
-            <p className="indicar-n-maps-tip">
-              No Maps: Partilhar → Copiar link → volte aqui.
-            </p>
-            {placeHint ? (
-              <p className="indicar-n-maps-status" role="status">
-                {placeHint}
-              </p>
-            ) : null}
-            <div className="indicar-n-place-grid">
-              <label className="indicar-n-field indicar-n-field--tight">
-                <span className="indicar-n-label-sm">Nome</span>
-                <input
-                  value={placeName}
-                  onChange={(e) => setPlaceName(e.target.value)}
-                  placeholder="Ex.: Oficina do João"
-                  autoComplete="organization"
+            {!placesUnavailable ? (
+              <>
+                <p className="indicar-n-group-hint">
+                  Busque o empreendimento no Google Places — com foto, endereço e
+                  sugestões parecidas.
+                </p>
+                <PlaceSearchPicker
+                  cityName={request?.cityName || ""}
+                  cityState={request?.cityState || ""}
+                  value={selectedPlace}
+                  onChange={setSelectedPlace}
+                  onUnavailable={onPlacesUnavailable}
                 />
-              </label>
-              <label className="indicar-n-field indicar-n-field--tight">
-                <span className="indicar-n-label-sm">Endereço / link</span>
-                <input
-                  value={placeAddress}
-                  onChange={(e) => applyPlaceAddress(e.target.value)}
-                  placeholder="Rua, bairro… ou link do Maps"
-                  autoComplete="street-address"
-                  inputMode="url"
-                />
-              </label>
-            </div>
-            {placeSource === "google_maps" ? (
-              <p className="indicar-n-maps-badge">Tipo: Google Maps</p>
-            ) : null}
+              </>
+            ) : (
+              <>
+                <p className="indicar-n-group-hint">
+                  Busca Places indisponível. Use nome e endereço — ou link do
+                  Google Maps.
+                </p>
+                <div className="indicar-n-maps-row">
+                  <button
+                    className="indicar-n-maps-btn"
+                    type="button"
+                    onClick={openMaps}
+                  >
+                    Abrir no Maps
+                  </button>
+                  <button
+                    className="indicar-n-maps-btn"
+                    type="button"
+                    onClick={pasteMapsLink}
+                  >
+                    Colar link do Maps
+                  </button>
+                </div>
+                <p className="indicar-n-maps-tip">
+                  No Maps: Partilhar → Copiar link → volte aqui.
+                </p>
+                {placeHint ? (
+                  <p className="indicar-n-maps-status" role="status">
+                    {placeHint}
+                  </p>
+                ) : null}
+                <div className="indicar-n-place-grid">
+                  <label className="indicar-n-field indicar-n-field--tight">
+                    <span className="indicar-n-label-sm">Nome</span>
+                    <input
+                      value={placeName}
+                      onChange={(e) => setPlaceName(e.target.value)}
+                      placeholder="Ex.: Oficina do João"
+                      autoComplete="organization"
+                    />
+                  </label>
+                  <label className="indicar-n-field indicar-n-field--tight">
+                    <span className="indicar-n-label-sm">Endereço / link</span>
+                    <input
+                      value={placeAddress}
+                      onChange={(e) => applyPlaceAddress(e.target.value)}
+                      placeholder="Rua, bairro… ou link do Maps"
+                      autoComplete="street-address"
+                      inputMode="url"
+                    />
+                  </label>
+                </div>
+                {placeSource === "google_maps" ? (
+                  <p className="indicar-n-maps-badge">Tipo: Google Maps</p>
+                ) : null}
+              </>
+            )}
           </fieldset>
 
           <div className="indicar-n-actions">

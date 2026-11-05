@@ -2,28 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [cities, setCities] = useState([]);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [cityId, setCityId] = useState("");
+  const [state, setState] = useState("");
+  const [cityName, setCityName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    api("/api/cities")
-      .then((data) => setCities(data.cities || []))
-      .catch(() => setCities([]));
-  }, []);
 
   async function onSubmit(event) {
     event.preventDefault();
     setError("");
+    if (!state || !cityName) {
+      setError("Selecione o estado e a cidade.");
+      return;
+    }
     setLoading(true);
     try {
       await api("/api/auth/register", {
@@ -32,7 +31,8 @@ export default function RegisterPage() {
           username,
           email,
           password,
-          cityId: Number(cityId),
+          state,
+          cityName,
         }),
       });
       router.push("/");
@@ -84,21 +84,17 @@ export default function RegisterPage() {
             maxLength={128}
           />
         </label>
-        <label>
-          Cidade
-          <select
-            value={cityId}
-            onChange={(e) => setCityId(e.target.value)}
-            required
-          >
-            <option value="">Selecione</option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
+
+        <IbgeCityPicker
+          state={state}
+          cityName={cityName}
+          onChange={({ state: nextState, cityName: nextCity }) => {
+            setState(nextState);
+            setCityName(nextCity);
+          }}
+          required
+        />
+
         <button className="cta" type="submit" disabled={loading}>
           {loading ? "Criando…" : "Criar conta"}
         </button>

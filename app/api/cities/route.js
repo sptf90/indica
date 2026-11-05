@@ -5,7 +5,7 @@ export async function GET() {
   const pool = getPool();
   if (!pool) return jsonError("Banco não configurado.", 503);
   const [rows] = await pool.query(
-    `SELECT id, name, state, slug FROM cities ORDER BY name ASC, state ASC`
+    `SELECT id, nome, estado, slug FROM cidades ORDER BY nome ASC, estado ASC`
   );
   return Response.json({
     cities: rows.map((c) => ({

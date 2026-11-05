@@ -1,5 +1,13 @@
+import { setAdminViewCookie } from "@/lib/admin-view";
 import { getPool } from "@/lib/db";
-import { findUserById, jsonError, publicUser, verifyPassword } from "@/lib/auth";
+import {
+  findUserById,
+  isRealAdminAccount,
+  jsonError,
+  publicUser,
+  verifyPassword,
+  withAdminView,
+} from "@/lib/auth";
 import { setSessionCookie } from "@/lib/session";
 
 export async function POST(request) {
@@ -18,8 +26,8 @@ export async function POST(request) {
 
   const pool = getPool();
   const [rows] = await pool.query(
-    `SELECT id, password_hash, deleted_at FROM users
-     WHERE (email = ? OR LOWER(username) = ?) AND deleted_at IS NULL
+    `SELECT id, senha_hash, excluido_em FROM usuarios
+     WHERE (email = ? OR LOWER(nome_usuario) = ?) AND excluido_em IS NULL
      LIMIT 1`,
     [login, login]
   );
@@ -30,5 +38,8 @@ export async function POST(request) {
 
   await setSessionCookie(row.id);
   const user = await findUserById(row.id);
-  return Response.json({ user: publicUser(user) });
+  if (isRealAdminAccount(user)) {
+    await setAdminViewCookie("admin");
+  }
+  return Response.json({ user: publicUser(await withAdminView(user)) });
 }

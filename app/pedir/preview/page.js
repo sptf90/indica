@@ -37,12 +37,18 @@ export default function PedirPreviewPage() {
     try {
       const parsed = JSON.parse(raw);
       setDraft(parsed);
-      api("/api/cities").then((data) => {
-        const city = (data.cities || []).find(
-          (c) => Number(c.id) === Number(parsed.cityId)
-        );
-        setCityLabel(city ? city.label : "");
-      });
+      if (parsed.cityLabel) {
+        setCityLabel(parsed.cityLabel);
+      } else if (parsed.cityName && parsed.state) {
+        setCityLabel(`${parsed.cityName} (${parsed.state})`);
+      } else {
+        api("/api/cities").then((data) => {
+          const city = (data.cities || []).find(
+            (c) => Number(c.id) === Number(parsed.cityId)
+          );
+          setCityLabel(city ? city.label : "");
+        });
+      }
     } catch {
       router.replace("/pedir");
     }

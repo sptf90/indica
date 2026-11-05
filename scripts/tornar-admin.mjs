@@ -1,6 +1,7 @@
 /**
- * Aplica sql/migrate-tutorial.sql
- * Uso: node scripts/migrate-tutorial.mjs
+ * Marca um usuário como admin (eh_admin = 1).
+ * Uso: node scripts/tornar-admin.mjs [username]
+ * Padrão: kaue
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -8,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const username = String(process.argv[2] || "kaue").trim();
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -39,8 +41,10 @@ if (missing.length) {
   process.exit(1);
 }
 
-const migratePath = path.join(root, "sql", "migrate-tutorial.sql");
-const sql = fs.readFileSync(migratePath, "utf8");
+if (!username) {
+  console.error("Informe o username.");
+  process.exit(1);
+}
 
 const connection = await mysql.createConnection({
   host: process.env.MYSQL_HOST,
@@ -48,15 +52,41 @@ const connection = await mysql.createConnection({
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
-  multipleStatements: true,
 });
 
 try {
-  await connection.query(sql);
-  console.log("Migração de tutorial_completed_at aplicada.");
-} catch (error) {
-  console.error(error);
-  process.exit(1);
+  const [rows] = await connection.query(
+    `SELECT id, nome_usuario, tipo_conta, eh_admin, excluido_em
+     FROM usuarios
+     WHERE LOWER(nome_usuario) = LOWER(?)
+     LIMIT 1`,
+    [username]
+  );
+  const user = rows[0];
+  if (!user) {
+    console.error(`Usuário "${username}" não encontrado.`);
+    process.exit(1);
+  }
+  if (user.excluido_em) {
+    console.error(`Usuário "${user.nome_usuario}" está excluído.`);
+    process.exit(1);
+  }
+  if (user.tipo_conta === "company") {
+    console.error(
+      `Usuário "${user.nome_usuario}" é empresa. Admin só em conta pessoa.`
+    );
+    process.exit(1);
+  }
+
+  await connection.query(
+    `UPDATE usuarios SET eh_admin = 1 WHERE id = ?`,
+    [user.id]
+  );
+
+  console.log(
+    `OK: @${user.nome_usuario} (id ${user.id}) agora é admin.` +
+      (Number(user.eh_admin) === 1 ? " (já era)" : "")
+  );
 } finally {
   await connection.end();
 }

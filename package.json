@@ -10,18 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:schema": "node scripts/apply-schema.mjs",
-    "db:migrate": "node scripts/migrate-reputation.mjs && node scripts/migrate-rankings.mjs && node scripts/migrate-company-3c.mjs && node scripts/migrate-notifications.mjs && node scripts/migrate-account-deletion.mjs && node scripts/migrate-share-links.mjs && node scripts/migrate-tutorial.mjs && node scripts/migrate-admin.mjs && node scripts/migrate-sponsor-banner.mjs && node scripts/migrate-company-city.mjs && node scripts/migrate-sponsor-site-url.mjs",
-    "db:migrate-company-city": "node scripts/migrate-company-city.mjs",
-    "db:migrate-rankings": "node scripts/migrate-rankings.mjs",
-    "db:migrate-company": "node scripts/migrate-company-3c.mjs",
-    "db:migrate-notifications": "node scripts/migrate-notifications.mjs",
-    "db:migrate-account-deletion": "node scripts/migrate-account-deletion.mjs",
-    "db:migrate-share-links": "node scripts/migrate-share-links.mjs",
-    "db:migrate-tutorial": "node scripts/migrate-tutorial.mjs",
-    "db:migrate-admin": "node scripts/migrate-admin.mjs",
-    "db:migrate-sponsor-banner": "node scripts/migrate-sponsor-banner.mjs",
-    "db:migrate-sponsor-site-url": "node scripts/migrate-sponsor-site-url.mjs"
+    "db:migrar": "node scripts/db-migrar.mjs",
+    "db:tornar-admin": "node scripts/tornar-admin.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

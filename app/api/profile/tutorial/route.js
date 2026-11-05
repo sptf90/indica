@@ -4,6 +4,7 @@ import {
   jsonError,
   publicUser,
   requireUser,
+  withAdminView,
 } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 
@@ -33,30 +34,31 @@ export async function PATCH(request) {
   try {
     if (completed) {
       await pool.query(
-        `UPDATE users
-         SET tutorial_completed_at = UTC_TIMESTAMP()
-         WHERE id = ? AND deleted_at IS NULL`,
+        `UPDATE usuarios
+         SET tutorial_concluido_em = UTC_TIMESTAMP()
+         WHERE id = ? AND excluido_em IS NULL`,
         [user.id]
       );
     } else {
       await pool.query(
-        `UPDATE users
-         SET tutorial_completed_at = NULL
-         WHERE id = ? AND deleted_at IS NULL`,
+        `UPDATE usuarios
+         SET tutorial_concluido_em = NULL
+         WHERE id = ? AND excluido_em IS NULL`,
         [user.id]
       );
     }
   } catch (err) {
     if (err && err.code === "ER_BAD_FIELD_ERROR") {
       return jsonError(
-        "Coluna tutorial_completed_at em falta. Corra npm run db:migrate-tutorial.",
+        "Coluna tutorial_concluido_em em falta. Rode npm run db:migrar.",
         503
       );
     }
     throw err;
   }
 
-  const fresh = (await findUserById(user.id)) || user;
+  const fresh =
+    (await withAdminView(await findUserById(user.id))) || user;
   return Response.json({
     ok: true,
     tutorialCompleted: Boolean(fresh.tutorial_completed_at),

@@ -22,9 +22,13 @@
 
 # misc
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 *.pem
 *.deb
 *:Zone.Identifier
+*.log
 
 # user uploads (keep folder)
 /public/uploads/*
@@ -45,9 +49,20 @@ yarn-error.log*
 secrets/
 .secrets/
 
+# local npm registry / SSL overrides (machine-specific)
+.npmrc
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cursor + Impeccable skill (downloaded binary, local hooks)
+.cursor/
+
+# Impeccable generated / per-developer — keep DESIGN.md sidecar
+.impeccable/*
+!.impeccable/design.json
+!.impeccable/config.json

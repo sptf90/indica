@@ -255,10 +255,33 @@ export default function AppShell({ children }) {
     router.refresh();
   }
 
+  async function exitPreview() {
+    try {
+      const res = await fetch("/api/admin/view-as", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "admin" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Falha ao voltar");
+      window.dispatchEvent(new Event("goindica:auth-changed"));
+      router.push(data.redirectTo || "/admin");
+      router.refresh();
+    } catch {
+      router.push("/admin");
+    }
+  }
+
   const displayName = user?.username || "você";
   const showSidebar = Boolean(user) && !authFree;
   const isCompany = Boolean(user?.isCompany);
   const isAdmin = Boolean(user?.isAdmin);
+  const isRealAdmin = Boolean(user?.isRealAdmin);
+  const viewAs = user?.viewAs || null;
+  const previewMode =
+    isRealAdmin && (viewAs === "user" || viewAs === "company")
+      ? viewAs
+      : null;
   const NAV = isCompany ? NAV_COMPANY : isAdmin ? NAV_ADMIN : NAV_USER;
   const homeHref = isAdmin ? "/admin" : isCompany ? "/empresa" : "/";
 
@@ -388,7 +411,28 @@ export default function AppShell({ children }) {
       </aside>
 
       <div className="workspace">
-        <header className="topbar">
+        <div
+          className={`workspace-sticky-head${previewMode ? " has-preview" : ""}`}
+        >
+          {previewMode ? (
+            <div className="admin-preview-bar" role="status">
+              <p>
+                Visualizando como{" "}
+                <strong>
+                  {previewMode === "company" ? "empresa" : "usuário"}
+                </strong>
+                . Permissões e telas iguais a essa conta.
+              </p>
+              <button
+                type="button"
+                className="admin-preview-exit"
+                onClick={exitPreview}
+              >
+                Voltar à gestão admin
+              </button>
+            </div>
+          ) : null}
+          <header className="topbar">
           <button
             type="button"
             className="menu-toggle"
@@ -490,6 +534,17 @@ export default function AppShell({ children }) {
                     <Link href="/perfil" onClick={() => setMenuOpen(false)}>
                       Meu perfil
                     </Link>
+                    {previewMode ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          exitPreview();
+                        }}
+                      >
+                        Voltar à gestão admin
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       data-testid="restart-tutorial-menu"
@@ -509,6 +564,7 @@ export default function AppShell({ children }) {
             </details>
           </div>
         </header>
+        </div>
         <div className="workspace-body workspace-body--dense">{children}</div>
       </div>
 

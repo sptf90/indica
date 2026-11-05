@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
 const TIPS = [
@@ -32,13 +33,15 @@ function formatWhen(value) {
 
 export default function IndicarListaPage() {
   const router = useRouter();
-  const [cities, setCities] = useState([]);
   const [cityId, setCityId] = useState("");
+  const [state, setState] = useState("");
+  const [cityName, setCityName] = useState("");
   const [items, setItems] = useState([]);
   const [emptyMessage, setEmptyMessage] = useState("");
   const [nextCursor, setNextCursor] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const [booting, setBooting] = useState(true);
 
   async function load(cid, cursor = null, append = false) {
@@ -48,7 +51,9 @@ export default function IndicarListaPage() {
       const qs = new URLSearchParams({ cityId: String(cid) });
       if (cursor) qs.set("cursor", String(cursor));
       const data = await api(`/api/indications?${qs.toString()}`);
-      setItems((prev) => (append ? [...prev, ...(data.items || [])] : data.items || []));
+      setItems((prev) =>
+        append ? [...prev, ...(data.items || [])] : data.items || []
+      );
       setNextCursor(data.nextCursor);
       setEmptyMessage(data.emptyMessage || "");
     } catch (err) {
@@ -60,11 +65,14 @@ export default function IndicarListaPage() {
   }
 
   useEffect(() => {
-    Promise.all([api("/api/cities"), api("/api/auth/me")])
-      .then(([citiesData, me]) => {
-        setCities(citiesData.cities || []);
-        const cid = String(me.user.cityId || "");
+    api("/api/auth/me")
+      .then((me) => {
+        const cid = me.user?.cityId != null ? String(me.user.cityId) : "";
+        const uf = me.user?.cityState || "";
+        const name = me.user?.cityName || "";
         setCityId(cid);
+        setState(uf);
+        setCityName(name);
         if (cid) return load(cid);
       })
       .catch((err) => {
@@ -75,18 +83,42 @@ export default function IndicarListaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  function onCityChange(value) {
-    setCityId(value);
-    if (value) load(value);
-    else {
+  async function onPlaceChange({ state: nextState, cityName: nextCity }) {
+    setState(nextState);
+    setCityName(nextCity);
+
+    if (!nextState || !nextCity) {
+      setCityId("");
       setItems([]);
       setNextCursor(null);
       setEmptyMessage("");
+      return;
+    }
+
+    setResolving(true);
+    setError("");
+    try {
+      const data = await api("/api/cities/ensure", {
+        method: "POST",
+        body: JSON.stringify({ name: nextCity, state: nextState }),
+      });
+      const cid = String(data.city.id);
+      setCityId(cid);
+      await load(cid);
+    } catch (err) {
+      if (err.status === 401) router.push("/login");
+      else setError(err.message);
+      setCityId("");
+      setItems([]);
+    } finally {
+      setResolving(false);
     }
   }
 
-  const selectedCity = cities.find((c) => String(c.id) === String(cityId));
-  const showEmpty = !loading && !booting && cityId && items.length === 0;
+  const showEmpty =
+    !loading && !booting && !resolving && cityId && items.length === 0;
+  const selectedLabel =
+    cityName && state ? `${cityName} (${state})` : cityName || "";
 
   return (
     <main className="page page-indicar">
@@ -94,8 +126,7 @@ export default function IndicarListaPage() {
         <div className="indicar-hero-copy">
           <p className="indicar-kicker">Fazer uma indicação</p>
           <h1 className="indicar-title">
-            Tem pedido aberto?{" "}
-            <span>indica aí</span>
+            Tem pedido aberto? <span>indica aí</span>
           </h1>
           <p className="indicar-lead">
             Escolha a cidade, veja o que a galera procura e manda sua dica.
@@ -129,39 +160,37 @@ export default function IndicarListaPage() {
           <h2>Onde você quer indicar?</h2>
           <p>Pedidos abertos na cidade selecionada.</p>
         </div>
-        <label className="indicar-city-field">
+        <div className="indicar-city-field">
           <span className="indicar-label">
-            Cidade
+            Local
             <span className="indicar-req">filtro</span>
           </span>
-          <select
-            value={cityId}
-            onChange={(e) => onCityChange(e.target.value)}
-            aria-label="Filtrar por cidade"
-          >
-            <option value="">Selecione</option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          {selectedCity ? (
+          <IbgeCityPicker
+            layout="row"
+            required={false}
+            state={state}
+            cityName={cityName}
+            onChange={onPlaceChange}
+            disabled={booting || resolving}
+          />
+          {selectedLabel ? (
             <span className="indicar-field-hint">
-              Mostrando pedidos em {selectedCity.label}
+              {resolving
+                ? "Atualizando lista…"
+                : `Mostrando pedidos em ${selectedLabel}`}
             </span>
           ) : (
             <span className="indicar-field-hint">
-              Escolha uma cidade para listar pedidos
+              Escolha estado e cidade para listar pedidos
             </span>
           )}
-        </label>
+        </div>
       </section>
 
       {error ? <p className="error-box">{error}</p> : null}
 
       <section className="indicar-list reveal delay-2" aria-live="polite">
-        {loading && items.length === 0 ? (
+        {(loading || resolving) && items.length === 0 ? (
           <p className="indicar-loading">Carregando pedidos…</p>
         ) : null}
 
@@ -236,9 +265,9 @@ export default function IndicarListaPage() {
           </div>
         ) : null}
 
-        {!cityId && !booting && !loading ? (
+        {!cityId && !booting && !loading && !resolving ? (
           <div className="indicar-empty indicar-empty--soft">
-            <h2>Selecione uma cidade</h2>
+            <h2>Selecione estado e cidade</h2>
             <p>O filtro acima libera a lista de pedidos elegíveis.</p>
           </div>
         ) : null}
