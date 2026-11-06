@@ -21,7 +21,7 @@ Pedidos anteriores à migração mantêm canal nulo e o formato livre; ao editar
 
 ## Seleção no mapa e navegação
 
-`components/LocationPicker.js` combina nome/endereço manuais e `MapLocationPicker`. Leaflet é carregado somente ao abrir o mapa. A pessoa pode clicar num ponto ou mover o mapa com o teclado e usar o ponto central. “Usar esta localização” confirma o ponto; cancelar mantém a localização anterior e os textos preenchidos. O mapa inicia no ponto salvo ou no Brasil. “Usar minha localização” aproxima o mapa somente após a solicitação explícita e a permissão do navegador; negar a permissão mantém o posicionamento manual disponível. O nome da cidade do pedido orienta a pessoa, sem chamar geocodificação para obter um centro.
+`components/LocationPicker.js` combina nome/endereço manuais e `MapLocationPicker`. Leaflet é carregado somente ao abrir o mapa. A pessoa pode clicar num ponto ou mover o mapa com o teclado e usar o ponto central. “Usar esta localização” confirma o ponto; cancelar mantém a localização anterior e os textos preenchidos. O mapa inicia no ponto salvo, quando existente; em novas indicações, aproxima a cidade e UF do pedido (zoom 13), sem selecionar automaticamente um estabelecimento. “Usar minha localização” aproxima o mapa somente após a solicitação explícita e a permissão do navegador; negar a permissão mantém o posicionamento manual disponível. O centro da cidade vem da base local em `data/br-city-centers.json`, consultada somente no servidor pelo endpoint autenticado `map-config`. Municípios homônimos são diferenciados pela UF. Se uma cidade informada não for encontrada, o mapa apresenta um erro e permite tentar novamente; a visão do Brasil fica reservada aos fluxos sem cidade informada. Não há chamada externa de geocodificação.
 
 Os pontos preservam o clique com sete casas decimais. Para pontuação, locais sem Place ID usam latitude/longitude arredondadas a cinco casas (aproximadamente um metro), comparadas diretamente à escolhida. Place IDs legados diferentes nunca são unificados apenas por coordenadas. Registros antigos não são apagados e não há reprocessamento de pontuação. Ao editar uma localização com coordenadas, ela passa à seleção manual, sem consultar Google Places.
 
@@ -32,3 +32,11 @@ O mapa utiliza atribuição OpenStreetMap visível, cache HTTP padrão e carrega
 Verificação: `npm run test:maps`, `scripts/smoke-contact-scoring.mjs` e navegação real com Leaflet em mobile/desktop.
 
 Referências: [Leaflet 1.9.4](https://leafletjs.com/reference-1.9.4.html), [política de mapas OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/), [URLs Google Maps](https://developers.google.com/maps/documentation/urls/get-started) e [links Waze](https://developers.google.com/waze/deeplinks).
+
+## Limites da janela e telas pequenas
+
+`ViewportPopover` é o componente canônico para as listas de estado/cidade. Usa portal no body, acompanha rolagem e viewport visual (incluindo teclado virtual), inverte a abertura quando falta espaço abaixo e limita altura e largura, com rolagem interna. Opções ativas via teclado permanecem visíveis.
+
+Menus de conta e cartões do tutorial têm altura limitada à janela e rolagem interna. O menu lateral usa altura dinâmica, navegação rolável e botão de fechar interno em mobile. Textos livres podem quebrar palavras longas; cartões de perfil e resgates e campos de formulário podem encolher sem forçar largura mínima. O cabeçalho público permite quebra de linha.
+
+Verificação reproduzível: `npm run test:responsive` com a aplicação de produção em `http://localhost:3001` (ou `BASE_URL`). As APIs são simuladas com conteúdo longo e perfis de visitante, usuário, empresa e administrador. O teste percorre todas as rotas de página e interações adicionais em seis resoluções, gera relatório e capturas em `/tmp/indica-responsive`. A integração real de coordenadas e regras de pontuação é verificada separadamente por `scripts/smoke-contact-scoring.mjs`.

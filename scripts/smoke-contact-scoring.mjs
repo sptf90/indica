@@ -46,6 +46,11 @@ try {
   rankingId = ranking.insertId;
   for (const uid of users.slice(1)) await db.query("INSERT INTO ranking_participacoes (ranking_id, usuario_id, inscrito_em) VALUES (?, ?, UTC_TIMESTAMP() - INTERVAL 1 DAY)", [rankingId, uid]);
   const owner = users[0];
+  const config = await api('/places/map-config?cityName=S%C3%A3o%20Paulo&cityState=SP', owner, undefined, 'GET');
+  assert.deepEqual(config.center, { lat: -23.5329, lng: -46.6395 });
+  const missingCity = await api('/places/map-config?cityName=Inexistente&cityState=SP', owner, undefined, 'GET');
+  assert.equal(missingCity.center, null);
+
   const body = { title: 'Teste de contatos', cityId: city.id };
   await api('/requests', owner, body, 'POST', 400);
   await api('/requests', owner, { ...body, contactMode: 'free' }, 'POST', 400);

@@ -283,3 +283,9 @@ Canonical in-app intro: peach linear wash + white radial, 1px 10% brand border, 
 ### Location selection
 
 `LocationPicker` owns the manual name/address fields and the expandable `MapLocationPicker`. Use Leaflet/OpenStreetMap with visible attribution, a Brand circle marker and the shared card/field/pill styles. The map loads on demand, supports click and keyboard selection, and resizes with its container. Address text is entered manually; navigation links use saved coordinates. This flow does not call paid Google mapping services.
+
+### Viewport containment
+
+At 320px and wider, public header actions may wrap. User-supplied names, addresses and URLs wrap within cards; fields and flex/grid children must be allowed to shrink. Decorative profile glow stays inside its container.
+
+`ViewportPopover` owns viewport-aware IBGE suggestion placement, using the shared dropdown styles and internal scrolling. Account menus and tutorial cards scroll within the available window height. The mobile sidebar has its own close control and uses dynamic viewport height. Map selection starts at the request municipality from the local server-side city dataset, with a previously saved point taking precedence.

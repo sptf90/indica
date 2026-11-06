@@ -62,3 +62,16 @@ test("seleção manual é validada sem chave e sem consultar APIs externas", asy
     ]) await assert.rejects(() => selection.resolveIndicationPlace(bad), { status: 400 });
   } finally { globalThis.fetch = originalFetch; }
 });
+
+
+test("visão inicial usa cidade e UF da base local, sem APIs externas", async () => {
+  const source = readFileSync("lib/city-map.js", "utf8").replace('import cityCenters from "../data/br-city-centers.json";',
+    `const cityCenters = ${readFileSync("data/br-city-centers.json", "utf8")};`);
+  const { cityMapCenter } = await import(moduleUrl(source));
+  assert.deepEqual(cityMapCenter("São Paulo", "SP"), { lat: -23.5329, lng: -46.6395 });
+  assert.deepEqual(cityMapCenter("  sao paulo ", "sp"), cityMapCenter("São Paulo", "SP"));
+  assert.notDeepEqual(cityMapCenter("Bom Jesus", "RS"), cityMapCenter("Bom Jesus", "PI"));
+  assert(cityMapCenter("Boa Esperança do Norte", "MT"));
+  assert.equal(cityMapCenter("Cidade inexistente", "SP"), null);
+  assert.equal(cityMapCenter("São Paulo", "XX"), null);
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import ViewportPopover from "@/components/ViewportPopover";
 import { api } from "@/lib/client-api";
 
 function normalizeSearch(value) {
@@ -33,6 +34,12 @@ function SearchableField({
   inputRef,
 }) {
   const listId = `${id}-list`;
+
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    const frame = requestAnimationFrame(() => document.getElementById(`${id}-opt-${activeIndex}`)?.scrollIntoView({ block: "nearest" }));
+    return () => cancelAnimationFrame(frame);
+  }, [open, activeIndex, id]);
 
   function onKeyDown(event) {
     if (!open || !options.length) {
@@ -108,7 +115,8 @@ function SearchableField({
           />
 
           {open && !loading ? (
-            <div
+            <ViewportPopover
+              anchorRef={inputRef}
               className="ibge-pick-dropdown"
               id={listId}
               role="listbox"
@@ -140,7 +148,7 @@ function SearchableField({
                   Digite mais letras para refinar a lista.
                 </p>
               ) : null}
-            </div>
+            </ViewportPopover>
           ) : null}
         </div>
       )}

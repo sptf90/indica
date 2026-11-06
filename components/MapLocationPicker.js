@@ -40,15 +40,20 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
       const point = coordinatesOf({ location: { lat: savedLat, lng: savedLng } });
       setCandidate(point);
       try {
+        const query = new URLSearchParams({ cityName, cityState });
         const [leafletModule, response] = await Promise.all([
-          import("leaflet"), fetch("/api/places/map-config", { signal: controller.signal }),
+          import("leaflet"), fetch(`/api/places/map-config?${query}`, { signal: controller.signal }),
         ]);
         const config = await response.json();
         if (!response.ok) throw new Error(config.error || "Não foi possível carregar o mapa.");
         if (cancelled) return;
+        const cityCenter = coordinatesOf({ location: config.center });
+        if (!point && cityName && cityState && !cityCenter) {
+          throw new Error(`Não foi possível localizar ${cityName} (${cityState}) no mapa. Tente novamente mais tarde.`);
+        }
         const L = leafletModule.default;
-        map = L.map(canvasRef.current, { scrollWheelZoom: false, minZoom: 2, maxZoom: 19, fadeAnimation: false })
-          .setView(point || { lat: -14.235, lng: -51.9253 }, point ? 17 : 4);
+        map = L.map(canvasRef.current, { scrollWheelZoom: true, minZoom: 2, maxZoom: 19, fadeAnimation: false })
+          .setView(point || cityCenter || { lat: -14.235, lng: -51.9253 }, point ? 17 : cityCenter ? 13 : 4);
         L.tileLayer(config.tileUrl, {
           attribution: config.attribution, maxZoom: 19,
           // Carrega apenas a área visível; mantém o cache HTTP padrão do navegador.
@@ -89,7 +94,7 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
       mapRef.current = null;
       selectRef.current = null;
     };
-  }, [open, attempt, savedLat, savedLng]);
+  }, [open, attempt, savedLat, savedLng, cityName, cityState]);
 
   function close() {
     setOpen(false);

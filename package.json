@@ -12,7 +12,8 @@
     "lint": "eslint",
     "db:migrar": "node scripts/db-migrar.mjs",
     "db:tornar-admin": "node scripts/tornar-admin.mjs",
-    "test:maps": "node --test scripts/test-map-location.mjs"
+    "test:maps": "node --test scripts/test-map-location.mjs",
+    "test:responsive": "node scripts/test-responsive.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -23,6 +24,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/bcryptjs": "^2.4.6",
     "eslint": "^9",
     "eslint-config-next": "16.4.3"
