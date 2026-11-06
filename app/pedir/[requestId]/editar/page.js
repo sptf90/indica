@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ContactModePicker from "@/components/ContactModePicker";
+import { validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
@@ -11,6 +13,7 @@ export default function EditarPedidoPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
+  const [contactMode, setContactMode] = useState("");
   const [cityId, setCityId] = useState("");
   const [state, setState] = useState("");
   const [cityName, setCityName] = useState("");
@@ -36,6 +39,7 @@ export default function EditarPedidoPage() {
         }
         setTitle(item.title || "");
         setDetails(item.details || "");
+        setContactMode(item.contactMode || "");
         setCityId(String(item.cityId || ""));
         setState(item.cityState || "");
         setCityName(item.cityName || "");
@@ -78,6 +82,7 @@ export default function EditarPedidoPage() {
   async function onSubmit(event) {
     event.preventDefault();
     setError("");
+    try { validateContactMode(contactMode); } catch (err) { setError(err.message); return; }
     if (!state || !cityName || !cityId) {
       setError("Selecione o estado e a cidade.");
       return;
@@ -93,6 +98,7 @@ export default function EditarPedidoPage() {
         body: JSON.stringify({
           title,
           details,
+          contactMode,
           cityId: Number(cityId),
         }),
       });
@@ -165,6 +171,7 @@ export default function EditarPedidoPage() {
             onChange={(e) => setDetails(e.target.value)}
           />
         </label>
+        <ContactModePicker value={contactMode} onChange={setContactMode} disabled={loading || resolving} />
         <button className="cta" type="submit" disabled={loading || resolving}>
           {loading ? "Salvando…" : resolving ? "Confirmando cidade…" : "Salvar"}
         </button>

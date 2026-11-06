@@ -278,3 +278,8 @@ Canonical in-app intro: peach linear wash + white radial, 1px 10% brand border, 
 - **Don't** use square or 4–8px buttons for primary actions — pills are the action shape.
 - **Don't** restore landing-scale padding or a marketing canvas (`#fdfdf1`) inside `workspace-body`.
 - **Don't** treat peach as a second brand or flood a view with `--brand` fill; Brand is the accent, cream is the room.
+
+
+### Location selection
+
+`LocationPicker` owns the manual name/address fields and the expandable `MapLocationPicker`. Use Leaflet/OpenStreetMap with visible attribution, a Brand circle marker and the shared card/field/pill styles. The map loads on demand, supports click and keyboard selection, and resizes with its container. Address text is entered manually; navigation links use saved coordinates. This flow does not call paid Google mapping services.

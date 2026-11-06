@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import { api } from "@/lib/client-api";
 
 function photoSrc(photoName, maxWidthPx = 160) {
@@ -299,8 +300,8 @@ export default function PlaceSearchPicker({
     }
   }
 
-  if (configured === false) return null;
-  if (configured === null) {
+  if (configured === false && !value) return null;
+  if (configured === null && !value) {
     return (
       <div className="place-pick place-pick--boot" aria-busy="true">
         <p className="place-pick-boot">Carregando busca de locais…</p>
@@ -325,16 +326,7 @@ export default function PlaceSearchPicker({
                   : ""}
               </p>
             ) : null}
-            {value.mapsUrl ? (
-              <a
-                className="place-pick-maps-link"
-                href={value.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Ver no Google Maps
-              </a>
-            ) : null}
+            <PlaceNavigationLinks place={value} />
           </div>
           <button
             type="button"
@@ -414,7 +406,7 @@ export default function PlaceSearchPicker({
         </div>
       )}
 
-      {value ? (
+      {value?.placeId ? (
         <div className="place-pick-similar">
           <div className="place-pick-similar-head">
             <h3>Parecidos por perto</h3>

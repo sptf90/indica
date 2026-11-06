@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import LocationPicker from "@/components/LocationPicker";
+import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
+import IndicationContactFields from "@/components/IndicationContactFields";
+import { validateIndicationContact } from "@/lib/indication-contact";
 import ReputationBadge from "@/components/ReputationBadge";
 import { api } from "@/lib/client-api";
 
@@ -118,20 +122,21 @@ export default function MinhaIndicacaoDetailPage() {
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState("");
   const [linksText, setLinksText] = useState("");
-  const [placeName, setPlaceName] = useState("");
-  const [placeAddress, setPlaceAddress] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     const data = await api(`/api/indications/${indicationId}`);
     setItem(data.item);
     setDescription(data.item.description || "");
     setLinksText((data.item.links || []).join("\n"));
-    setPlaceName(data.item.place?.name || "");
-    setPlaceAddress(data.item.place?.address || "");
+    setSelectedPlace(data.item.place || null);
+    setWhatsappNumber(data.item.whatsappNumber || "");
   }
 
   useEffect(() => {
-    load().catch((err) => {
+    Promise.resolve().then(load).catch((err) => {
       if (err.status === 401) router.push("/login");
       else setError(err.message);
     });
@@ -140,24 +145,23 @@ export default function MinhaIndicacaoDetailPage() {
 
   async function save() {
     setError("");
+    setSaving(true);
     try {
+      validateIndicationContact(item.contactMode, { place: selectedPlace, whatsappNumber });
       const links = linksText
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-      const place =
-        placeName.trim() && placeAddress.trim()
-          ? { source: "manual", name: placeName.trim(), address: placeAddress.trim() }
-          : null;
+      const place = selectedPlace?.name?.trim() && selectedPlace?.address?.trim() ? selectedPlace : null;
       await api(`/api/indications/${indicationId}`, {
         method: "PATCH",
-        body: JSON.stringify({ description, links, place }),
+        body: JSON.stringify({ description, links, place, whatsappNumber }),
       });
       setEditing(false);
       await load();
     } catch (err) {
       setError(err.message);
-    }
+    } finally { setSaving(false); }
   }
 
   async function remove() {
@@ -231,11 +235,13 @@ export default function MinhaIndicacaoDetailPage() {
                 ))}
               </ul>
             ) : null}
+            {item.whatsappNumber ? <p><a href={`https://wa.me/${item.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp: +{item.whatsappNumber}</a></p> : null}
             {item.place ? (
               <p className="row-meta">
                 Local: {item.place.name} — {item.place.address}
               </p>
             ) : null}
+            <PlaceNavigationLinks place={item.place} />
             {item.result === "invalid" || outcome?.kind === "chosen_invalid" ? (
               <p className="error-box">
                 Não válida
@@ -284,17 +290,14 @@ export default function MinhaIndicacaoDetailPage() {
             Links (um por linha)
             <textarea value={linksText} onChange={(e) => setLinksText(e.target.value)} />
           </label>
-          <label>
-            Local — nome
-            <input value={placeName} onChange={(e) => setPlaceName(e.target.value)} />
-          </label>
-          <label>
-            Local — endereço
-            <input value={placeAddress} onChange={(e) => setPlaceAddress(e.target.value)} />
-          </label>
+          <IndicationContactFields mode={item.contactMode} whatsappNumber={whatsappNumber}
+            onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}
+            cityName={item.cityName} cityState={item.cityState} />
+          {!item.contactMode ? <LocationPicker value={selectedPlace} onChange={setSelectedPlace}
+            cityName={item.cityName} cityState={item.cityState} required={false} /> : null}
           <div className="toolbar">
-            <button className="cta" type="submit">
-              Salvar
+            <button className="cta" type="submit" disabled={saving}>
+              {saving ? "Salvando…" : "Salvar"}
             </button>
             <button className="cta ghost" type="button" onClick={() => setEditing(false)}>
               Cancelar

@@ -11,10 +11,12 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrar": "node scripts/db-migrar.mjs",
-    "db:tornar-admin": "node scripts/tornar-admin.mjs"
+    "db:tornar-admin": "node scripts/tornar-admin.mjs",
+    "test:maps": "node --test scripts/test-map-location.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "leaflet": "^1.9.4",
     "mysql2": "^3.15.3",
     "next": "16.4.3",
     "react": "19.3.0",
