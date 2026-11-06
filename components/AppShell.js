@@ -43,23 +43,29 @@ const NAV_COMPANY = [
 
 /** Admin: hub + patrocínios + gestão de rankings (mensal/semanal). */
 const NAV_ADMIN = [
-  { href: "/admin", label: "Início", icon: "home", exact: true },
-  {
-    href: "/admin/patrocinios",
-    label: "Patrocínios",
-    icon: "shield",
-    exact: true,
-  },
-  {
-    href: "/admin/rankings",
-    label: "Rankings",
-    icon: "rank",
-    children: [
-      { href: "/admin/rankings/mensal", label: "Mensal" },
-      { href: "/admin/rankings/semanal", label: "Semanal" },
-    ],
-  },
-  { href: "/perfil", label: "Meu perfil", icon: "user" },
+  { href: "/admin", label: "Visão geral", icon: "home", exact: true },
+  { href: "/admin/usuarios", label: "Contas", icon: "user", children: [
+    { href: "/admin/usuarios", label: "Usuários e administradores" },
+    { href: "/admin/empresas", label: "Empresas" },
+    { href: "/admin/cidades", label: "Cidades" },
+  ] },
+  { href: "/admin/pedidos", label: "Comunidade", icon: "orders", children: [
+    { href: "/admin/pedidos", label: "Pedidos" },
+    { href: "/admin/indicacoes", label: "Indicações" },
+    { href: "/admin/avaliacoes", label: "Avaliações" },
+  ] },
+  { href: "/admin/patrocinios", label: "Patrocínios", icon: "shield", exact: true },
+  { href: "/admin/rankings", label: "Rankings e prêmios", icon: "rank", children: [
+    { href: "/admin/rankings/mensal", label: "Rankings mensais" },
+    { href: "/admin/rankings/semanal", label: "Rankings semanais" },
+    { href: "/admin/resgates", label: "Resgates" },
+  ] },
+  { href: "/admin/auditoria", label: "Operação", icon: "score", children: [
+    { href: "/admin/pontuacao", label: "Extrato de pontos" },
+    { href: "/admin/reputacao", label: "Histórico de reputação" },
+    { href: "/admin/notificacoes", label: "Notificações" },
+    { href: "/admin/auditoria", label: "Auditoria" },
+  ] },
 ];
 
 function NavIcon({ name }) {
@@ -284,7 +290,7 @@ export default function AppShell({ children }) {
       : null;
   const navGroups = isAdmin
     ? [
-        { id: "admin", label: "Admin", items: NAV_ADMIN.filter((item) => item.href !== "/perfil") },
+        { id: "admin", label: "Admin", items: NAV_ADMIN },
         { id: "user", label: "Usuário", items: [
           ...NAV_USER.map((item) => item.href === "/perfil" ? {
             ...item, children: [{ href: "/perfil/reputacao", label: "Histórico de reputação" }],
@@ -376,7 +382,7 @@ export default function AppShell({ children }) {
               {group.label ? <h2 className="sidebar-section-title">{group.label}</h2> : null}
               {group.items.map((item) => {
                 if (item.children?.length) {
-                  const groupActive = isActive(pathname, item);
+                  const groupActive = isActive(pathname, item) || item.children.some(child => isActive(pathname, child));
                   return (
                     <div
                       key={item.href + item.label}
@@ -393,10 +399,7 @@ export default function AppShell({ children }) {
                       </Link>
                       <div className="sidebar-subnav" role="group" aria-label={item.label}>
                         {item.children.map((child) => {
-                          const childActive = isActive(pathname, {
-                            ...child,
-                            exact: true,
-                          });
+                          const childActive = isActive(pathname, child);
                           return (
                             <Link
                               key={child.href + child.label}

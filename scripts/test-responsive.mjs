@@ -105,6 +105,11 @@ try {
         await page.getByRole('button', { name: 'Continuar', exact: true }).click();
         await measure(page, 'empresa-premios');
       }
+      if (scenario.path === '/admin/usuarios/17') {
+        await page.getByRole('button', { name: 'Editar cadastro', exact: true }).click();
+        await page.getByLabel('Permitir administrar o sistema').check();
+        await measure(page, 'admin-edicao-com-permissao');
+      }
       if (scenario.path === '/admin/patrocinios') {
         await page.getByRole('button', { name: 'Detalhe', exact: true }).first().click();
         await measure(page, 'admin-patrocinio-expandido');

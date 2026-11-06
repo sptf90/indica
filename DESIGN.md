@@ -295,3 +295,9 @@ At 320px and wider, public header actions may wrap. User-supplied names, address
 The admin sidebar groups existing links under Admin, Usuário and Empresa, with muted headings and thin dividers in the scrollable navigation area. Preview modes retain each account’s original navigation.
 
 Map search uses an explicit search action, a scrollable numbered list and corresponding markers. A selected candidate shows its name, address and coordinates before confirmation. Keep search controls, result text and candidate feedback inside the shared map panel, with wrapping at mobile widths. Loading, empty and error states preserve manual selection. Maps and Places attribution stay visible; server credentials never enter browser configuration.
+
+### Administrative workspace
+
+`AdminWorkspace` owns the compact introduction, breadcrumbs, feedback and detail fields. `AdminDashboard`, `AdminRecords`, `AdminRecord` and `AdminRecordEditor` share the existing cream, white, peach and orange tokens. Organize management under Contas, Comunidade, Premiações and Operação; the sidebar retains its Admin, Usuário and Empresa groups and preview modes.
+
+Lists use native tables with captions, server pagination and explicit search/date/status filters. At narrow widths only the table scrolls horizontally, with a visible scrolling hint; page controls and forms stack within the viewport. Details use wrapping definition lists and linked related records. Editing remains inline, preserving form values on errors; permission changes show the affected account and require explicit confirmation. Save/cancel return focus to the edit action. Loading, forbidden, empty, retry and stale-record states are part of the shared components.

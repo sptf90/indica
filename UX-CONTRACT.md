@@ -54,3 +54,22 @@ Verificação reproduzível: `npm run test:responsive` com a aplicação de prod
 `AppShell` mantém os grupos Admin, Usuário e Empresa no modo de gestão, incluindo os destinos principais e atalhos para reputação, benefícios e missões. Telas de detalhes/edição continuam ligadas aos seus respectivos registros. O admin pode abrir a home de usuário e a área empresarial sem mudar o cookie de visualização. O contexto empresarial reutiliza a empresa própria de prévia do admin, preservando os filtros de propriedade. Usuários comuns não ganham essa permissão.
 
 Os botões de prévia continuam em `/admin`: como usuário, a sidebar apresenta somente os links de usuário; como empresa, somente os links empresariais. O botão de voltar restaura a navegação completa. `npm run test:admin-navigation` verifica as permissões reais e ambos os fluxos no navegador, em desktop e mobile.
+
+## Gestão administrativa
+
+| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
+| --- | --- | --- | --- | --- |
+| Form | AdminRecordEditor e IbgeCityPicker | validateProfilePatch e updateAdminRecord | Cadastro pessoal ou empresarial, justificativa obrigatória | test:admin-console e test:responsive |
+| Select/Listbox | Select nativo em AdminRecords; IbgeCityPicker para municípios | admin-catalog e endpoints IBGE existentes | Situação nativa; cidade/UF com sugestões | test:responsive e test:admin-console |
+| Date | Inputs date nativos em AdminRecords e adminDate | Períodos de criação e fuso America/Sao_Paulo | Início/fim opcionais, intervalo inclusivo | test:admin-console |
+| Scrollbar | admin-table-scroll e sidebar existentes | CSS compartilhado e limites do viewport | Tabela com rolagem interna, página vertical | test:responsive |
+| Toast | AdminFeedback e feedback inline em AdminRecord | Resposta da API e estado local | Carregamento, erro, sucesso e conflito persistentes | test:admin-console |
+| CRUD | lib/admin-service.js e lib/admin-auth.js | Banco e permissões revalidadas na transação | Consulta dos módulos, edição de usuários/empresas ativas | test:admin-console |
+
+`lib/admin-catalog.js` define os onze módulos de consulta. `lib/admin-service.js` é a autoridade para filtros, detalhes, edição e auditoria; `lib/admin-auth.js` exige um administrador ativo no modo de gestão em todos os novos endpoints. Prévia de usuário/empresa não acessa os dados administrativos. Contadores e atividade recente vêm do banco; os indicadores de integração informam configuração, sem prometer disponibilidade externa.
+
+`AdminRecords` mantém busca, situação, período, página e contexto relacionado na URL. O servidor aceita somente filtros e módulos conhecidos, usa parâmetros SQL e retorna até 25 registros por página. Datas são apresentadas e filtradas pelo calendário de Brasília. `AdminRecord` oferece os vínculos entre usuários, pedidos, indicações, avaliações, pontos e resgates. A localização de uma indicação usa as coordenadas persistidas para abrir Google Maps/Waze.
+
+`AdminRecordEditor` edita dados cadastrais de usuários e empresas ativas. Mudanças de acesso administrativo exigem confirmação explícita no formulário; toda gravação exige justificativa e revisão atual do cadastro. Erros preservam os dados digitados; conflito oferece recarregar. O servidor revalida o ator sob bloqueio na transação, impede remover o próprio acesso, conceder acesso administrativo a empresas ou deixar o sistema sem administrador ativo. Alterações concorrentes não sobrescrevem silenciosamente os dados. A auditoria registra ator, cadastro, campos alterados e justificativa na mesma transação. Senhas e segredos não são retornados pelas consultas.
+
+Patrocínios e rankings continuam nos fluxos existentes. Pedidos, indicações, avaliações, pontos, reputação, resgates, notificações e auditoria são consultados pelos novos módulos; suas regras de negócio não são substituídas por edição livre. Detalhes de escopo e validação em `docs/administracao.md`.

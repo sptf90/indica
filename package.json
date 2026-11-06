@@ -15,7 +15,8 @@
     "test:maps": "node --test scripts/test-map-location.mjs",
     "test:responsive": "node scripts/test-responsive.mjs",
     "test:admin-navigation": "node scripts/test-admin-navigation.mjs",
-    "test:map-search": "node scripts/test-map-search.mjs"
+    "test:map-search": "node scripts/test-map-search.mjs",
+    "test:admin-console": "node scripts/test-admin-console.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
