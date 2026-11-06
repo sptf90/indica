@@ -1,7 +1,7 @@
 import { jsonError, requireCompanyUser } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import {
-  findCompanyByUserId,
+  findAccessibleCompanyForUser,
   updateSponsorshipRequest,
 } from "@/lib/company";
 
@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireCompanyUser();
-    const company = await findCompanyByUserId(user.id);
+    const company = await findAccessibleCompanyForUser(user);
     if (!company) return jsonError("Empresa não vinculada.", 404);
 
     const id = Number((await params).id);

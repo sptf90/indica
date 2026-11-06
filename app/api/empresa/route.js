@@ -1,12 +1,12 @@
 import {
-  isCompanyAccount,
+  canAccessCompanyArea,
   jsonError,
   publicUser,
   requireUser,
 } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import {
-  findCompanyByUserId,
+  findAccessibleCompanyForUser,
   getCompanyContextForUser,
   mapCompany,
 } from "@/lib/company";
@@ -15,7 +15,7 @@ export async function GET() {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireUser();
-    if (!isCompanyAccount(user)) {
+    if (!canAccessCompanyArea(user)) {
       return Response.json({
         user: publicUser(user),
         company: null,
@@ -37,10 +37,10 @@ export async function PATCH(request) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireUser();
-    if (!isCompanyAccount(user)) {
+    if (!canAccessCompanyArea(user)) {
       return jsonError("Acesso restrito a conta empresarial.", 403);
     }
-    const company = await findCompanyByUserId(user.id);
+    const company = await findAccessibleCompanyForUser(user);
     if (!company) return jsonError("Empresa não encontrada.", 404);
 
     let body;

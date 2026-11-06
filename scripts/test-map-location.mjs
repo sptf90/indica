@@ -5,7 +5,9 @@ import { test } from "node:test";
 const moduleUrl = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
 const locationUrl = moduleUrl(readFileSync("lib/location.js", "utf8"));
 const location = await import(locationUrl);
+const googleUrl = moduleUrl(readFileSync("lib/google-places.js", "utf8").replace('"./location"', JSON.stringify(locationUrl)));
 const selection = await import(moduleUrl(readFileSync("lib/map-selection.js", "utf8")
+  .replace('"./google-places"', JSON.stringify(googleUrl))
   .replace('"./location"', JSON.stringify(locationUrl))));
 const contact = await import(moduleUrl(readFileSync("lib/indication-contact.js", "utf8").replace('"./location"', JSON.stringify(locationUrl))));
 
@@ -74,4 +76,29 @@ test("visão inicial usa cidade e UF da base local, sem APIs externas", async ()
   assert(cityMapCenter("Boa Esperança do Norte", "MT"));
   assert.equal(cityMapCenter("Cidade inexistente", "SP"), null);
   assert.equal(cityMapCenter("São Paulo", "XX"), null);
+});
+
+
+test("estabelecimento do Places é resolvido no servidor sem confiar nos dados do cliente", async () => {
+  const originalFetch = globalThis.fetch;
+  const previousKey = process.env.GOOGLE_PLACES_API_KEY;
+  process.env.GOOGLE_PLACES_API_KEY = "test-key-server-only";
+  const canonical = { id: "place_muffato", displayName: { text: "Super Muffato" }, formattedAddress: "Rua do Comércio, 100 — São Paulo", location: { latitude: -23.5512345, longitude: -46.6354321 }, googleMapsUri: "https://maps.google.com/?cid=123" };
+  const calls = [];
+  globalThis.fetch = async (url, options) => { calls.push({ url, options }); return new Response(JSON.stringify(canonical), { status: 200 }); };
+  try {
+    const result = await selection.resolveIndicationPlace({ selectionSource: "google_places", placeId: canonical.id, name: "Nome forjado", address: "Endereço forjado", location: { lat: 0, lng: 0 } });
+    assert.equal(result.name, "Super Muffato"); assert.equal(result.address, canonical.formattedAddress);
+    assert.equal(result.source, "google_maps"); assert.equal(result.placeId, canonical.id);
+    assert.deepEqual(result.location, { lat: -23.5512345, lng: -46.6354321 });
+    assert.equal(calls.length, 1); assert.match(calls[0].url, /places\/place_muffato$/);
+    await assert.rejects(() => selection.resolveIndicationPlace({ selectionSource: "google_places", placeId: "../forjado" }), { status: 400 });
+    const google = await import(googleUrl);
+    await google.searchPlacesText({ textQuery: "Muffato em São Paulo SP", simple: true });
+    const mask = calls[1].options.headers["X-Goog-FieldMask"];
+    assert(mask.includes("places.location")); assert(!mask.includes("rating")); assert(!mask.includes("photos"));
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY; else process.env.GOOGLE_PLACES_API_KEY = previousKey;
+  }
 });

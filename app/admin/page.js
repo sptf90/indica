@@ -125,7 +125,7 @@ export default function AdminHomePage() {
           <p className="eyebrow">Admin</p>
           <h1>Gestão</h1>
           <p className="lead admin-lead">
-            Escolha o que quer gerir. Sem pedidos nem indicações da comunidade.
+            Escolha o que quer gerir. Acesse também as áreas de usuário e empresa pelo menu.
           </p>
         </div>
       </section>

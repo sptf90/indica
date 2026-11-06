@@ -282,7 +282,19 @@ export default function AppShell({ children }) {
     isRealAdmin && (viewAs === "user" || viewAs === "company")
       ? viewAs
       : null;
-  const NAV = isCompany ? NAV_COMPANY : isAdmin ? NAV_ADMIN : NAV_USER;
+  const navGroups = isAdmin
+    ? [
+        { id: "admin", label: "Admin", items: NAV_ADMIN.filter((item) => item.href !== "/perfil") },
+        { id: "user", label: "Usuário", items: [
+          ...NAV_USER.map((item) => item.href === "/perfil" ? {
+            ...item, children: [{ href: "/perfil/reputacao", label: "Histórico de reputação" }],
+          } : item),
+          { href: "/beneficios", label: "Benefícios e cupons", icon: "gift" },
+          { href: "/missoes", label: "Missões", icon: "mission" },
+        ] },
+        { id: "company", label: "Empresa", items: NAV_COMPANY },
+      ]
+    : [{ id: "primary", items: isCompany ? NAV_COMPANY : NAV_USER }];
   const homeHref = isAdmin ? "/admin" : isCompany ? "/empresa" : "/";
 
   if (user === undefined) {
@@ -359,40 +371,43 @@ export default function AppShell({ children }) {
           />
         </Link>
         <nav className="sidebar-nav">
-          {NAV.map((item) => {
-            if (item.children?.length) {
-              const groupActive = isActive(pathname, item);
-              return (
-                <div
-                  key={item.href + item.label}
-                  className={`sidebar-group${groupActive ? " is-active" : ""}`}
-                >
-                  <Link
-                    href={item.href}
-                    className={`sidebar-link${groupActive ? " active" : ""}`}
-                    data-tour={item.tourId || undefined}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <NavIcon name={item.icon} />
-                    <span>{item.label}</span>
-                  </Link>
-                  <div className="sidebar-subnav" role="group" aria-label={item.label}>
-                    {item.children.map((child) => {
-                      const childActive = isActive(pathname, {
-                        ...child,
-                        exact: true,
-                      });
-                      return (
-                        <Link
-                          key={child.href + child.label}
-                          href={child.href}
-                          className={`sidebar-sublink${childActive ? " active" : ""}`}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          {child.label}
-                        </Link>
-                      );
-                    })}
+          {navGroups.map((group) => (
+            <div key={group.id} className="sidebar-section" role={group.label ? "group" : undefined} aria-label={group.label}>
+              {group.label ? <h2 className="sidebar-section-title">{group.label}</h2> : null}
+              {group.items.map((item) => {
+                if (item.children?.length) {
+                  const groupActive = isActive(pathname, item);
+                  return (
+                    <div
+                      key={item.href + item.label}
+                      className={`sidebar-group${groupActive ? " is-active" : ""}`}
+                    >
+                      <Link
+                        href={item.href}
+                        className={`sidebar-link${groupActive ? " active" : ""}`}
+                        data-tour={item.tourId || undefined}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <NavIcon name={item.icon} />
+                        <span>{item.label}</span>
+                      </Link>
+                      <div className="sidebar-subnav" role="group" aria-label={item.label}>
+                        {item.children.map((child) => {
+                          const childActive = isActive(pathname, {
+                            ...child,
+                            exact: true,
+                          });
+                          return (
+                            <Link
+                              key={child.href + child.label}
+                              href={child.href}
+                              className={`sidebar-sublink${childActive ? " active" : ""}`}
+                              onClick={() => setMenuOpen(false)}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
                   </div>
                 </div>
               );
@@ -412,6 +427,8 @@ export default function AppShell({ children }) {
               </Link>
             );
           })}
+            </div>
+          ))}
         </nav>
         <p className="sidebar-slogan">Você procura. Alguém indica.</p>
       </aside>

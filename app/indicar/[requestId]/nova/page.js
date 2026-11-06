@@ -263,7 +263,7 @@ export default function NovaIndicacaoPage() {
             onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}
             cityName={request?.cityName} cityState={request?.cityState} />
 
-          {!request?.contactMode ? <fieldset className="indicar-n-group">
+          {request && !request.contactMode ? <fieldset className="indicar-n-group">
             <legend>
               Local <span className="indicar-n-opt">opcional</span>
             </legend>

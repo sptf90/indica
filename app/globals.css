@@ -12203,3 +12203,20 @@ main h1, main h2, main h3, main p, main a {
     background: var(--card); color: var(--ink); cursor: pointer;
   }
 }
+
+/* A navegação completa de gestão mantém os destinos agrupados por perfil. */
+.sidebar-section { display: flex; flex-direction: column; gap: calc(0.12 * var(--sidebar-rem)); }
+.sidebar-section + .sidebar-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sidebar-section-title { margin: 0 12px 5px; font-size: 13px; line-height: 1.5; font-weight: 700; color: var(--muted); }
+
+.map-place-search { display: grid; gap: 0.5rem; margin: 1rem 0; min-width: 0; }
+.map-place-search-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.map-place-search-row input { flex: 1 1 10rem; width: 100%; }
+.map-place-search p { margin: 0; font-size: 0.85rem; }
+.map-place-results { list-style: none; margin: 0; padding: 0; max-height: min(18rem, 45dvh); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 12px; }
+.map-place-result { display: flex; align-items: flex-start; gap: 0.6rem; width: 100%; border: 0; border-bottom: 1px solid var(--line); padding: 0.7rem; font: inherit; text-align: left; color: var(--ink); background: var(--card); cursor: pointer; }
+.map-place-result:hover, .map-place-result.is-selected { background: var(--brand-soft); }
+.map-place-result > span:last-child { display: grid; gap: 0.25rem; min-width: 0; overflow-wrap: anywhere; }
+.map-place-result span span { font-size: 0.82rem; color: var(--muted); }
+.map-location-candidate { margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 12px; background: var(--brand-soft); overflow-wrap: anywhere; }
+.map-location-candidate p { margin: 0.3rem 0 0; }

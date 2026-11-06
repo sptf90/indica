@@ -503,10 +503,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!user) return;
-    if (user.isAdmin) {
-      router.replace("/admin");
-      return;
-    }
     if (user.isCompany) {
       router.replace("/empresa");
     }
@@ -533,7 +529,7 @@ export default function HomePage() {
 
   if (!user) return <GuestLanding />;
 
-  if (user.isAdmin || user.isCompany) {
+  if (user.isCompany) {
     return (
       <main className="page">
         <p className="muted">Redirecionando…</p>

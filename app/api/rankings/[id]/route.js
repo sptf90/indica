@@ -1,4 +1,4 @@
-import { isCompanyAccount, requireUser, jsonError } from "@/lib/auth";
+import { isAdminAccount, isCompanyAccount, requireUser, jsonError } from "@/lib/auth";
 import { findCompanyByUserId } from "@/lib/company";
 import {
   buildPrizeContext,
@@ -19,12 +19,12 @@ export async function GET(_request, { params }) {
     // Empresa: prévia da própria campanha antes do início (sem exigir visibilidade pública).
     const data = await getStandings(rankingId, {
       userId: user.id,
-      requireVisible: !company,
+      requireVisible: !company && !isAdminAccount(user),
     });
     if (!data) return jsonError("Ranking não encontrado.", 404);
 
     const ranking = await getRankingById(rankingId, user.id, {
-      requireVisible: !company,
+      requireVisible: !company && !isAdminAccount(user),
     });
     if (!ranking) return jsonError("Ranking não encontrado.", 404);
 

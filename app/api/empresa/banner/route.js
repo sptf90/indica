@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { jsonError, requireCompanyUser } from "@/lib/auth";
-import { findCompanyByUserId } from "@/lib/company";
+import { findAccessibleCompanyForUser } from "@/lib/company";
 import { getPool } from "@/lib/db";
 import { SPONSOR_BANNER_UPLOAD } from "@/lib/sponsor-banner";
 
@@ -12,7 +12,7 @@ export async function POST(request) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireCompanyUser();
-    const company = await findCompanyByUserId(user.id);
+    const company = await findAccessibleCompanyForUser(user);
     if (!company) return jsonError("Empresa não encontrada.", 404);
 
     let formData;

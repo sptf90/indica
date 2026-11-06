@@ -13,7 +13,9 @@
     "db:migrar": "node scripts/db-migrar.mjs",
     "db:tornar-admin": "node scripts/tornar-admin.mjs",
     "test:maps": "node --test scripts/test-map-location.mjs",
-    "test:responsive": "node scripts/test-responsive.mjs"
+    "test:responsive": "node scripts/test-responsive.mjs",
+    "test:admin-navigation": "node scripts/test-admin-navigation.mjs",
+    "test:map-search": "node scripts/test-map-search.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
