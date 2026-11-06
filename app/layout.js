@@ -1,4 +1,5 @@
 import { Plus_Jakarta_Sans, Sora } from "next/font/google";
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 

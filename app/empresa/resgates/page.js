@@ -75,7 +75,7 @@ export default function EmpresaResgatesPage() {
       try {
         const me = await api("/api/auth/me");
         if (cancelled) return;
-        if (!me.user?.isCompany) {
+        if (!me.user?.isCompany && !me.user?.isAdmin) {
           setMode("denied");
           setReady(true);
           return;

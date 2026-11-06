@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Countdown from "@/components/Countdown";
 import ReputationBadge from "@/components/ReputationBadge";
+import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
+import { contactModeLabel } from "@/lib/indication-contact";
 import { api } from "@/lib/client-api";
 import { INVALID_REASONS } from "@/lib/constants";
 
@@ -30,15 +32,6 @@ function PinIcon() {
       <circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
-}
-
-function mapsHref(place) {
-  if (!place) return null;
-  const url = place.mapsUrl || place.maps_url;
-  if (url && typeof url === "string" && /^https?:\/\//i.test(url.trim())) {
-    return url.trim();
-  }
-  return null;
 }
 
 function PedidoDetailPage() {
@@ -264,6 +257,7 @@ function PedidoDetailPage() {
           </span>
           {request.cityName} ({request.cityState})
         </p>
+        {request.contactMode ? <p className="pedido-meta">Receber: {contactModeLabel(request.contactMode)}</p> : null}
         <div className="pedido-details-block">
           <p className="pedido-details-label">Detalhes do pedido</p>
           {detailsText ? (
@@ -341,7 +335,6 @@ function PedidoDetailPage() {
           </div>
           <ul className="pedido-chosen-list">
             {chosenIndications.map((item) => {
-              const maps = mapsHref(item.place);
               const outcomeClass =
                 item.outcome === "valid"
                   ? "is-valid"
@@ -383,17 +376,7 @@ function PedidoDetailPage() {
                               </span>
                             ) : null}
                           </p>
-                          {maps ? (
-                            <a
-                              className="cmp-maps-link"
-                              href={maps}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Abrir no Maps
-                              <span aria-hidden>↗</span>
-                            </a>
-                          ) : null}
+                          <PlaceNavigationLinks place={item.place} />
                         </div>
                       </div>
                     ) : null}
@@ -464,7 +447,6 @@ function PedidoDetailPage() {
                 );
               }
 
-              const maps = mapsHref(item.place);
               const isSelected = selectedId === Number(item.id);
               const canChoose =
                 !selectedId &&
@@ -503,17 +485,7 @@ function PedidoDetailPage() {
                             </span>
                           ) : null}
                         </p>
-                        {maps ? (
-                          <a
-                            className="cmp-maps-link"
-                            href={maps}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Abrir no Maps
-                            <span aria-hidden>↗</span>
-                          </a>
-                        ) : null}
+                        <PlaceNavigationLinks place={item.place} />
                       </div>
                     </div>
                   ) : null}

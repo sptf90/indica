@@ -278,3 +278,26 @@ Canonical in-app intro: peach linear wash + white radial, 1px 10% brand border, 
 - **Don't** use square or 4–8px buttons for primary actions — pills are the action shape.
 - **Don't** restore landing-scale padding or a marketing canvas (`#fdfdf1`) inside `workspace-body`.
 - **Don't** treat peach as a second brand or flood a view with `--brand` fill; Brand is the accent, cream is the room.
+
+
+### Location selection
+
+`LocationPicker` owns the manual name/address fields and the expandable `MapLocationPicker`. Use Leaflet/OpenStreetMap for the manual fallback and Google Maps for Places search results, with provider attribution and the shared card/field/pill styles. The map loads on demand, supports click and keyboard selection, and resizes with its container. Address/name can be filled from a confirmed Places result or entered manually; navigation links use saved coordinates. Search calls Google services only when configured; manual fallback works without Google keys.
+
+### Viewport containment
+
+At 320px and wider, public header actions may wrap. User-supplied names, addresses and URLs wrap within cards; fields and flex/grid children must be allowed to shrink. Decorative profile glow stays inside its container.
+
+`ViewportPopover` owns viewport-aware IBGE suggestion placement, using the shared dropdown styles and internal scrolling. Account menus and tutorial cards scroll within the available window height. The mobile sidebar has its own close control and uses dynamic viewport height. Map selection starts at the request municipality from the local server-side city dataset, with a previously saved point taking precedence.
+
+### Admin navigation and map search
+
+The admin sidebar groups existing links under Admin, Usuário and Empresa, with muted headings and thin dividers in the scrollable navigation area. Preview modes retain each account’s original navigation.
+
+Map search uses an explicit search action, a scrollable numbered list and corresponding markers. A selected candidate shows its name, address and coordinates before confirmation. Keep search controls, result text and candidate feedback inside the shared map panel, with wrapping at mobile widths. Loading, empty and error states preserve manual selection. Maps and Places attribution stay visible; server credentials never enter browser configuration.
+
+### Administrative workspace
+
+`AdminWorkspace` owns the compact introduction, breadcrumbs, feedback and detail fields. `AdminDashboard`, `AdminRecords`, `AdminRecord` and `AdminRecordEditor` share the existing cream, white, peach and orange tokens. Organize management under Contas, Comunidade, Premiações and Operação; the sidebar retains its Admin, Usuário and Empresa groups and preview modes.
+
+Lists use native tables with captions, server pagination and explicit search/date/status filters. At narrow widths only the table scrolls horizontally, with a visible scrolling hint; page controls and forms stack within the viewport. Details use wrapping definition lists and linked related records. Editing remains inline, preserving form values on errors; permission changes show the affected account and require explicit confirmation. Save/cancel return focus to the edit action. Loading, forbidden, empty, retry and stale-record states are part of the shared components.

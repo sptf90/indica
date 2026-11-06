@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { contactModeLabel } from "@/lib/indication-contact";
 import { api } from "@/lib/client-api";
 
 const DRAFT_KEY = "indica_request_draft";
@@ -29,6 +30,7 @@ export default function PedirPreviewPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
     const raw = sessionStorage.getItem(DRAFT_KEY);
     if (!raw) {
       router.replace("/pedir");
@@ -36,6 +38,7 @@ export default function PedirPreviewPage() {
     }
     try {
       const parsed = JSON.parse(raw);
+      if (!parsed.contactMode) { router.replace("/pedir"); return; }
       setDraft(parsed);
       if (parsed.cityLabel) {
         setCityLabel(parsed.cityLabel);
@@ -52,6 +55,8 @@ export default function PedirPreviewPage() {
     } catch {
       router.replace("/pedir");
     }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [router]);
 
   async function publish() {
@@ -124,6 +129,7 @@ export default function PedirPreviewPage() {
             <dt>Cidade</dt>
             <dd>{cityLabel || "—"}</dd>
           </div>
+          <div className="page-previa-field"><dt>Receber</dt><dd>{contactModeLabel(draft.contactMode)}</dd></div>
           <div className="page-previa-field page-previa-field--block">
             <dt>Detalhes</dt>
             <dd className={details ? undefined : "page-previa-empty"}>

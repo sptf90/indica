@@ -2,7 +2,7 @@ import { jsonError, requireCompanyUser } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import {
   createSponsorshipRequest,
-  findCompanyByUserId,
+  findAccessibleCompanyForUser,
   listSponsorshipRequests,
 } from "@/lib/company";
 
@@ -10,7 +10,7 @@ export async function GET() {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireCompanyUser();
-    const company = await findCompanyByUserId(user.id);
+    const company = await findAccessibleCompanyForUser(user);
     if (!company) return jsonError("Empresa não vinculada.", 404);
     const items = await listSponsorshipRequests(company.id);
     return Response.json({ items });
@@ -23,7 +23,7 @@ export async function POST(request) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = await requireCompanyUser();
-    const company = await findCompanyByUserId(user.id);
+    const company = await findAccessibleCompanyForUser(user);
     if (!company) return jsonError("Empresa não vinculada.", 404);
     const body = await request.json();
     const item = await createSponsorshipRequest(company, body);

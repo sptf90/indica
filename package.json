@@ -11,16 +11,23 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrar": "node scripts/db-migrar.mjs",
-    "db:tornar-admin": "node scripts/tornar-admin.mjs"
+    "db:tornar-admin": "node scripts/tornar-admin.mjs",
+    "test:maps": "node --test scripts/test-map-location.mjs",
+    "test:responsive": "node scripts/test-responsive.mjs",
+    "test:admin-navigation": "node scripts/test-admin-navigation.mjs",
+    "test:map-search": "node scripts/test-map-search.mjs",
+    "test:admin-console": "node scripts/test-admin-console.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "leaflet": "^1.9.4",
     "mysql2": "^3.15.3",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/bcryptjs": "^2.4.6",
     "eslint": "^9",
     "eslint-config-next": "16.4.3"

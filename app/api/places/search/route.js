@@ -1,3 +1,4 @@
+import { cityMapCenter } from "@/lib/city-map";
 import { assertConsumerUser, jsonError, requireUser } from "@/lib/auth";
 import {
   isPlacesConfigured,
@@ -81,9 +82,12 @@ export async function GET(request) {
       if (q.length < 2) {
         return Response.json({ items: [], configured: true });
       }
+      if (q.length > 200) return jsonError("Use até 200 caracteres na busca.");
+      const center = cityMapCenter(cityName, cityState);
       items = await searchPlacesText({
-        textQuery: buildBiasedQuery(q, cityName, cityState),
-        pageSize: 8,
+        textQuery: buildBiasedQuery(q, cityName, cityState), pageSize: 8,
+        simple: searchParams.get("purpose") === "map",
+        locationBias: center ? { circle: { center: { latitude: center.lat, longitude: center.lng }, radius: 25000 } } : null,
       });
     }
 

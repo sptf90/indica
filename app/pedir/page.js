@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ContactModePicker from "@/components/ContactModePicker";
+import { validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
@@ -20,6 +22,7 @@ export default function PedirPage() {
   const [me, setMe] = useState(null);
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
+  const [contactMode, setContactMode] = useState("");
   const [cityId, setCityId] = useState("");
   const [state, setState] = useState("");
   const [cityName, setCityName] = useState("");
@@ -39,6 +42,7 @@ export default function PedirPage() {
             const parsed = JSON.parse(draft);
             setTitle(parsed.title || "");
             setDetails(parsed.details || "");
+            setContactMode(parsed.contactMode || "");
             setCityId(String(parsed.cityId || meData.user?.cityId || ""));
             setState(parsed.state || meData.user?.cityState || "");
             setCityName(parsed.cityName || meData.user?.cityName || "");
@@ -86,6 +90,7 @@ export default function PedirPage() {
   function goPreview(event) {
     event.preventDefault();
     setError("");
+    try { validateContactMode(contactMode); } catch (err) { setError(err.message); return; }
     if (!title.trim()) {
       setError("Título obrigatório.");
       return;
@@ -103,6 +108,7 @@ export default function PedirPage() {
       JSON.stringify({
         title: title.trim(),
         details: details.trim(),
+        contactMode,
         cityId: Number(cityId),
         state,
         cityName,
@@ -121,7 +127,7 @@ export default function PedirPage() {
             Conta o que você procura — <span>a galera indica</span>
           </h1>
           <p className="pedir-lead">
-            Um título claro e a cidade já bastam. Detalhes ajudam a receber
+            Diga o que procura, a cidade e como quer receber a indicação. Detalhes ajudam a receber
             indicações mais certeiras.
           </p>
           <ul className="pedir-tips" aria-label="Dicas rápidas">
@@ -207,6 +213,8 @@ export default function PedirPage() {
               placeholder="Bairro, orçamento, preferências, horário…"
             />
           </label>
+
+          <ContactModePicker value={contactMode} onChange={setContactMode} disabled={resolving} />
 
           <div className="pedir-actions">
             <button
