@@ -44,7 +44,14 @@ try {
   notificationId = await insert("INSERT INTO notificacoes(usuario_id,categoria,evento,titulo,corpo,deeplink,pedido_id,indicacao_id) VALUES(?,'indications','fixture',?,?,?, ?,?)", [indicator, `Notificação ${prefix}`, 'Mensagem de teste.', `/minhas-indicacoes/${indicationId}`, requestId, indicationId]);
   const ids = { usuarios: owner, empresas: companyId, cidades: city.id, pedidos: requestId, indicacoes: indicationId, avaliacoes: evaluationId, resgates: rewardId, pontuacao: scoreId, reputacao: reputationId, notificacoes: notificationId };
   await api('/overview', null, { status: 401 });
-  const overview = await api('/overview', admin); assert(overview.counts.users >= 28); assert.equal(overview.integrations.database, true); assert(!JSON.stringify(overview).includes(process.env.AUTH_SECRET));
+  const overview = await api('/overview', admin); assert(overview.counts.users >= 28); assert.equal(overview.integrations, undefined);
+  const system = await api('/system', admin); assert.equal(system.integrations.database, true);
+  assert(!JSON.stringify(system).includes(process.env.AUTH_SECRET));
+  await api('/system', null, { status: 401 });
+  await api('/system', owner, { status: 403 });
+  await api('/system', admin, { status: 403, mode: 'user' });
+  await api('/system', admin, { status: 403, mode: 'company' });
+  assert(!JSON.stringify(overview).includes(process.env.AUTH_SECRET));
   for (const section of Object.keys(ADMIN_MODULES)) {
     await api(`/data/${section}`, owner, { status: 403 });
     await api(`/data/${section}`, admin, { status: 403, mode: 'user' });
@@ -117,6 +124,7 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), true, `Overflow em ${path} ${viewport.width}`);
       assert.equal(await page.getByRole('heading', { name: 'Não foi possível carregar', exact: true }).count(), 0, path);
     }
+    await check('/admin/sistema'); await page.getByRole('heading', { name: 'Integrações e configuração' }).waitFor();
     await check('/admin'); await page.getByRole('heading', { name: 'Acompanhamento da operação' }).waitFor(); await page.screenshot({ path: `${output}/visao-geral-${viewport.width}.png`, fullPage: true });
     for (const section of Object.keys(ADMIN_MODULES)) {
       await check(`/admin/${section}?q=${prefix}`);

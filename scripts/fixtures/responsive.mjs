@@ -20,7 +20,7 @@ export const scenarios = [
   ...['/', '/login', '/register', '/cadastro', '/empresa'].map(path => ({ role: 'guest', path })),
   ...['/', '/pedir', '/pedir/preview', '/pedir/meus', '/pedir/123', '/pedir/124/editar', '/indicar', '/indicar/123', '/indicar/123/nova', '/minhas-indicacoes', '/minhas-indicacoes/15', '/perfil', '/perfil/usuario_publico', '/perfil/reputacao', '/pontuacao', '/rankings', '/rankings/10', '/beneficios', '/missoes'].map(path => ({ role: 'user', path })),
   ...['/empresa', '/empresa/resgates', '/rankings', '/rankings/10', '/perfil'].map(path => ({ role: 'company', path })),
-  ...['/admin', '/admin/patrocinios', '/admin/rankings', '/admin/rankings/mensal', '/admin/rankings/semanal', '/perfil', ...Object.keys(ADMIN_MODULES).flatMap(section => [`/admin/${section}`, `/admin/${section}/17`])].map(path => ({ role: 'admin', path })),
+  ...['/admin', '/admin/sistema', '/admin/patrocinios', '/admin/rankings', '/admin/rankings/mensal', '/admin/rankings/semanal', '/perfil', ...Object.keys(ADMIN_MODULES).flatMap(section => [`/admin/${section}`, `/admin/${section}/17`])].map(path => ({ role: 'admin', path })),
 ];
 export async function mockApi(route, role) {
   const url = new URL(route.request().url()); const path = url.pathname; const user = userFor(role);
@@ -45,7 +45,8 @@ export async function mockApi(route, role) {
   else if (path === '/api/empresa/slots') data = { items: ['weekly', 'monthly'].map(modality => ({ key: `${modality}-test`, modality, modalityLabel: modality === 'weekly' ? 'Semanal' : 'Mensal', cityId: 1, cityName: baseUser.cityName, cityState: 'RJ', periodStart: iso(7), periodEnd: iso(14), alreadyRequested: false })) };
   else if (path === '/api/empresa/sponsorships') data = { items: [sponsorship, { ...sponsorship, id: 21, status: 'rejected', statusLabel: 'Rejeitada' }] };
   else if (path === '/api/empresa/rewards') data = { items: [reward] };
-  else if (path === '/api/admin/overview') data = { counts: { users: 123456, admins: 123, companies: 12345, requests: 123456, indications: 1234567, activeRankings: 1234, pendingSponsorships: 1234, evaluatingRequests: 12345, pendingRewards: 12345, overdueEvaluations: 1234 }, recent: [{ id: 17, entityType: 'request', entityId: 123, reason: 'admin_user_update', username: longName, createdAt: iso(-1) }], integrations: { places: true, googleMap: true, cronProtected: true }, checkedAt: iso(0) };
+  else if (path === '/api/admin/system') data = { integrations: { database: true, places: true, googleMap: true, cronProtected: true }, checkedAt: iso(0) };
+  else if (path === '/api/admin/overview') data = { counts: { users: 123456, admins: 123, companies: 12345, requests: 123456, indications: 1234567, activeRankings: 1234, pendingSponsorships: 1234, evaluatingRequests: 12345, pendingRewards: 12345, overdueEvaluations: 1234 }, recent: [{ id: 17, entityType: 'request', entityId: 123, reason: 'admin_user_update', username: longName, createdAt: iso(-1) }], checkedAt: iso(0) };
   else if (path.startsWith('/api/admin/data/')) {
     const [, , , , section, id] = path.split('/');
     if (id) data = { id: Number(id), section, title: longTitle, statusLabel: 'Ativo', fields: [{ label: 'Descrição', value: longDescription }, { label: 'Contato', value: baseUser.email }, { label: 'Operação', type: 'json', value: { detalhes: longDescription, link: `https://example.com/${'endereco'.repeat(35)}` } }], relations: [{ title: 'Registros relacionados', href: '/admin/usuarios' }], editable: section === 'usuarios' ? { id: Number(id), kind: 'user', username: longName, email: baseUser.email, cityId: 1, cityName: baseUser.cityName, cityState: 'RJ', accountType: 'user', isAdmin: false, isSelf: false, revision: 'fixture' } : null };

@@ -1,0 +1,32 @@
+import Link from "next/link";
+
+const queues = [
+  { key: "overdueEvaluations", label: "Avaliações com prazo esgotado", description: "Consulte os pedidos cujo prazo de avaliação terminou.", href: "/admin/pedidos?status=in_evaluation&overdue=1", urgent: true },
+  { key: "pendingSponsorships", label: "Patrocínios para análise", description: "Revise as solicitações de patrocínio.", href: "/admin/patrocinios" },
+  { key: "evaluatingRequests", label: "Pedidos em avaliação", description: "Acompanhe as indicações que estão sendo testadas.", href: "/admin/pedidos?status=in_evaluation" },
+  { key: "pendingRewards", label: "Prêmios aguardando resgate", description: "Consulte os benefícios disponíveis para os contemplados.", href: "/admin/resgates?status=pending" },
+];
+
+export default function DashboardTasks({ counts }) {
+  const pending = queues.filter(queue => Number(counts[queue.key]) > 0);
+  return (
+    <section className="admin-record-panel" aria-labelledby="admin-tasks-heading">
+      <div className="admin-record-list-head"><h2 id="admin-tasks-heading">Acompanhamento da operação</h2><span className="admin-section-caption">Pendências e acompanhamento</span></div>
+      {pending.length ? (
+        <ul className="admin-task-list">
+          {pending.map(queue => (
+            <li key={queue.key}>
+              <Link href={queue.href} className={queue.urgent ? "admin-task-urgent" : undefined}>
+                <span className="admin-task-description"><strong>{queue.label}</strong><span>{queue.description}</span></span>
+                <span className="admin-task-count">{Number(counts[queue.key]).toLocaleString("pt-BR")}</span>
+                <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="admin-task-empty"><strong>Nenhuma pendência no momento</strong><p>Não há patrocínios em análise, pedidos em avaliação ou prêmios aguardando resgate.</p><Link href="/admin/pedidos">Consultar pedidos</Link></div>
+      )}
+    </section>
+  );
+}

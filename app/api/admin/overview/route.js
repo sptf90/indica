@@ -1,6 +1,6 @@
 import { jsonError } from "@/lib/auth";
 import { requireManagementAdmin } from "@/lib/admin-auth";
-import { adminOverview } from "@/lib/admin-service";
+import { adminOverview } from "@/lib/admin-dashboard";
 export async function GET() {
   try {
     await requireManagementAdmin();

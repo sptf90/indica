@@ -55,7 +55,7 @@ Verificação reproduzível: `npm run test:responsive` com a aplicação de prod
 
 `AppShell` mantém os grupos Admin, Usuário e Empresa no modo de gestão, incluindo os destinos principais e atalhos para reputação, benefícios e missões. Telas de detalhes/edição continuam ligadas aos seus respectivos registros. O admin pode abrir a home de usuário e a área empresarial sem mudar o cookie de visualização. O contexto empresarial reutiliza a empresa própria de prévia do admin, preservando os filtros de propriedade. Usuários comuns não ganham essa permissão.
 
-Os botões de prévia continuam em `/admin`: como usuário, a sidebar apresenta somente os links de usuário; como empresa, somente os links empresariais. O botão de voltar restaura a navegação completa. `npm run test:admin-navigation` verifica as permissões reais e ambos os fluxos no navegador, em desktop e mobile.
+Os botões de prévia ficam em `/admin/sistema`: como usuário, a sidebar apresenta somente os links de usuário; como empresa, somente os links empresariais. O botão de voltar restaura a navegação completa. `npm run test:admin-navigation` verifica as permissões reais e ambos os fluxos no navegador, em desktop e mobile.
 
 ## Gestão administrativa
 
@@ -75,3 +75,11 @@ Os botões de prévia continuam em `/admin`: como usuário, a sidebar apresenta 
 `AdminRecordEditor` edita dados cadastrais de usuários e empresas ativas. Mudanças de acesso administrativo exigem confirmação explícita no formulário; toda gravação exige justificativa e revisão atual do cadastro. Erros preservam os dados digitados; conflito oferece recarregar. O servidor revalida o ator sob bloqueio na transação, impede remover o próprio acesso, conceder acesso administrativo a empresas ou deixar o sistema sem administrador ativo. Alterações concorrentes não sobrescrevem silenciosamente os dados. A auditoria registra ator, cadastro, campos alterados e justificativa na mesma transação. Senhas e segredos não são retornados pelas consultas.
 
 Patrocínios e rankings continuam nos fluxos existentes. Pedidos, indicações, avaliações, pontos, reputação, resgates, notificações e auditoria são consultados pelos novos módulos; suas regras de negócio não são substituídas por edição livre. Detalhes de escopo e validação em `docs/administracao.md`.
+
+## Organização da administração
+
+`lib/admin-catalog.js` é a fonte única dos destinos administrativos. `SidebarNavigation` exibe todas as áreas e usa grupos administrativos recolhíveis, sem links duplicados entre títulos e opções. O grupo ativo abre automaticamente, com seleção indicada por `aria-current`. As áreas Usuário e Empresa continuam visíveis.
+
+`/admin` mostra resumo, filas com itens e atividade recente; `/admin/sistema` concentra integrações e prévias. `lib/admin-dashboard.js` separa as consultas de resumo/sistema do CRUD em `lib/admin-service.js`. Os dois endpoints exigem gestão administrativa, com testes de acesso negado para usuário, empresa e prévias. Nenhuma regra de pontuação, reputação ou cadastro foi alterada.
+
+Verificação: `npm run test:admin-dashboard`, `test:admin-navigation`, `test:admin-console` e `test:responsive`. Consulte `docs/administracao.md` para responsabilidades e rotas.

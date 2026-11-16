@@ -10,7 +10,7 @@ for (const file of ['.env.local', '.env']) if (existsSync(file)) process.loadEnv
 const base = process.env.BASE_URL || 'http://localhost:3001';
 const output = process.env.ADMIN_NAV_OUTPUT || '/tmp/indica-admin-navigation';
 mkdirSync(output, { recursive: true });
-const db = await mysql.createConnection({ host: process.env.MYSQL_HOST, port: Number(process.env.MYSQL_PORT || 3306), user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD, database: process.env.MYSQL_DATABASE });
+const db = mysql.createPool({ host: process.env.MYSQL_HOST, port: Number(process.env.MYSQL_PORT || 3306), user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD, database: process.env.MYSQL_DATABASE });
 const users = []; let browser;
 const session = id => {
   const data = Buffer.from(JSON.stringify({ uid: id, exp: Date.now() + 3600000 })).toString('base64url');
@@ -73,6 +73,7 @@ try {
     if (viewport.width <= 860) await page.getByRole('button', { name: 'Fechar navegação', exact: true }).click();
     // Usa os botões originais para entrar nas duas prévias e retornar à gestão.
     for (const mode of ['usuário', 'empresa']) {
+      await page.goto(`${base}/admin/sistema`);
       await page.getByRole('button', { name: new RegExp(`^Ver como ${mode}`) }).click();
       await page.getByRole('button', { name: 'Voltar à gestão admin', exact: true }).first().waitFor();
       await page.waitForTimeout(250);
