@@ -71,16 +71,19 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
         setConfig(nextConfig);
         const cityCenter = coordinatesOf({ location: nextConfig.center });
         if (!point && cityName && cityState && !cityCenter) throw new Error(`Não foi possível localizar ${cityName} (${cityState}) no mapa. Tente novamente mais tarde.`);
+        // Resultados Google não são desenhados sobre o provedor manual.
+        const mapPoint = nextConfig.provider === "google" || valueRef.current?.source !== "google_maps" ? point : null;
+        if (point && !mapPoint) { candidateRef.current = null; setCandidate(null); }
         map = await createSelectionMap({
           element: canvasRef.current, config: nextConfig,
-          center: point || cityCenter || { lat: -14.235, lng: -51.9253 }, zoom: point ? 17 : cityCenter ? 13 : 4,
+          center: mapPoint || cityCenter || { lat: -14.235, lng: -51.9253 }, zoom: mapPoint ? 17 : cityCenter ? 13 : 4,
           onSelect: raw => { if (!cancelled) selectManual(raw); },
           onResultSelect: place => { if (!cancelled) chooseResult(place); },
           onTileError: failed => { if (!cancelled) setTileError(failed); },
         });
         if (cancelled) { map.destroy(); return; }
         mapRef.current = map;
-        if (point) map.selectPoint(point);
+        if (mapPoint) map.selectPoint(mapPoint);
         setReady(true); map.resize();
         sizeObserver = new ResizeObserver(() => map.resize());
         sizeObserver.observe(canvasRef.current);
@@ -131,8 +134,10 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
     {open ? <section id={panelId} className="map-location-panel" aria-labelledby={`${panelId}-title`}>
       <h3 ref={headingRef} id={`${panelId}-title`} tabIndex={-1}>Selecione o local exato</h3>
       <p className="muted">Busque o estabelecimento ou marque um ponto no mapa e confirme a localização.{cityName ? ` O pedido é para ${cityName}${cityState ? ` (${cityState})` : ""}.` : ""}</p>
-      {ready && config?.placesConfigured ? <MapPlaceSearch key={`${cityName}:${cityState}:${attempt}:${manual}`} cityName={cityName} cityState={cityState}
-        onResults={places => mapRef.current?.showResults(places)} onSelect={chooseResult} selectedId={candidate?.placeId} /> : ready ? <p className="muted">A busca por nome está indisponível no momento. Você pode marcar o ponto manualmente.</p> : null}
+      <MapPlaceSearch key={`${cityName}:${cityState}:${attempt}:${manual}`} cityName={cityName} cityState={cityState}
+        disabled={!ready || !config?.placesConfigured} onResults={places => mapRef.current?.showResults(places)}
+        onSelect={chooseResult} selectedId={candidate?.placeId} />
+      {ready && !config?.placesConfigured ? <p className="muted">A busca no mapa está indisponível. Você pode marcar o ponto manualmente ou buscar pelos campos de nome e endereço.</p> : null}
       <div className="map-location-canvas-wrap" aria-busy={loading}>
         <div ref={canvasRef} className="map-location-canvas" aria-label="Mapa interativo para selecionar a localização" />
         {ready && !loading ? <span className="map-location-crosshair" aria-hidden="true">+</span> : null}

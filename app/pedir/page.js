@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ContactModePicker from "@/components/ContactModePicker";
-import { validateContactMode } from "@/lib/indication-contact";
+import { isRequestContactMode, validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
@@ -42,7 +42,7 @@ export default function PedirPage() {
             const parsed = JSON.parse(draft);
             setTitle(parsed.title || "");
             setDetails(parsed.details || "");
-            setContactMode(parsed.contactMode || "");
+            setContactMode(isRequestContactMode(parsed.contactMode) ? parsed.contactMode : "");
             setCityId(String(parsed.cityId || meData.user?.cityId || ""));
             setState(parsed.state || meData.user?.cityState || "");
             setCityName(parsed.cityName || meData.user?.cityName || "");

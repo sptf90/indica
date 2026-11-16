@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ContactModePicker from "@/components/ContactModePicker";
-import { validateContactMode } from "@/lib/indication-contact";
+import { isRequestContactMode, validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 
@@ -39,7 +39,7 @@ export default function EditarPedidoPage() {
         }
         setTitle(item.title || "");
         setDetails(item.details || "");
-        setContactMode(item.contactMode || "");
+        setContactMode(isRequestContactMode(item.contactMode) ? item.contactMode : "");
         setCityId(String(item.cityId || ""));
         setState(item.cityState || "");
         setCityName(item.cityName || "");

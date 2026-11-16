@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { contactModeLabel } from "@/lib/indication-contact";
+import { contactModeLabel, isRequestContactMode } from "@/lib/indication-contact";
 import { api } from "@/lib/client-api";
 
 const DRAFT_KEY = "indica_request_draft";
@@ -38,7 +38,7 @@ export default function PedirPreviewPage() {
     }
     try {
       const parsed = JSON.parse(raw);
-      if (!parsed.contactMode) { router.replace("/pedir"); return; }
+      if (!isRequestContactMode(parsed.contactMode)) { router.replace("/pedir"); return; }
       setDraft(parsed);
       if (parsed.cityLabel) {
         setCityLabel(parsed.cityLabel);

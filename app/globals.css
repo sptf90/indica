@@ -12235,3 +12235,9 @@ main h1, main h2, main h3, main p, main a {
 .admin-table-hint { display: none; color: var(--muted); font-size: var(--type-meta); margin: 0 0 0.6rem; }
 @media (max-width: 900px) { .admin-table-hint { display: block; } }
 .admin-period-note { margin: 0; color: var(--muted); font-size: var(--type-meta); }
+
+.place-lookup-field { display: grid; gap: 0.45rem; min-width: 0; }
+.place-lookup-field > label { font-size: var(--type-label); font-weight: 600; }
+.place-lookup-field .map-place-search-row input { min-width: 0; }
+.place-lookup-field .map-place-results { max-height: 16rem; }
+.place-lookup-field p { margin: 0; }

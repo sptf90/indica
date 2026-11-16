@@ -54,8 +54,16 @@ try {
   const body = { title: 'Teste de contatos', cityId: city.id };
   await api('/requests', owner, body, 'POST', 400);
   await api('/requests', owner, { ...body, contactMode: 'free' }, 'POST', 400);
+  await api('/requests', owner, { ...body, contactMode: 'both' }, 'POST', 400);
   for (const mode of ['maps', 'whatsapp', 'both']) {
-    const created = await api('/requests', owner, { ...body, contactMode: mode }, 'POST', 201);
+    let created;
+    if (mode === 'both') {
+      // Fixture histórica: novos pedidos não permitem mais a modalidade combinada.
+      const [legacy] = await db.query("INSERT INTO pedidos (solicitante_id, cidade_id, titulo, canal_indicacao) VALUES (?, ?, ?, 'both')", [owner, city.id, body.title]);
+      created = { item: { id: legacy.insertId, contactMode: 'both' } };
+    } else {
+      created = await api('/requests', owner, { ...body, contactMode: mode }, 'POST', 201);
+    }
     const rid = created.item.id; requests.push(rid);
     assert.equal(created.item.contactMode, mode);
     await api('/indications', users[1], { requestId: rid, description: 'Sem contato' }, 'POST', 400);
@@ -144,7 +152,7 @@ try {
   const pinA = manualPin(exactPoint);
   const pinB = manualPin(exactPoint);
   await api('/indications', users[3], { requestId: pinRid, description: 'Ponto inválido', place: { ...pinA, location: { lat: 91, lng: 0 } } }, 'POST', 400);
-  await api('/indications', users[4], { requestId: pinRid, description: 'Sem endereço', place: { ...pinA, address: '' } }, 'POST', 400);
+  await api('/indications', users[4], { requestId: pinRid, description: 'Local vazio', place: {} }, 'POST', 400);
   const createdA = await api('/indications', users[3], { requestId: pinRid, description: 'Ponto exato', place: pinA }, 'POST', 201);
   const createdB = await api('/indications', users[4], { requestId: pinRid, description: 'Mesmo ponto', place: pinB }, 'POST', 201);
   const detailA = await api(`/indications/${createdA.id}`, users[3], undefined, 'GET');
@@ -171,6 +179,25 @@ try {
     const [[score]] = await db.query('SELECT SUM(delta) AS points FROM ledger_pontuacao WHERE ranking_id = ? AND indicacao_id = ?', [rankingId, iid]);
     assert.equal(Number(score.points), index === 0 ? 10 : 5);
   }
+  // Basta nome, endereço ou mapa, na criação e na edição.
+  const partialPlaces = [{ name: 'Oficina do bairro' }, { address: 'Rua A, 100' }, { location: { lat: -23.55, lng: -46.63 } }];
+  for (const [index, place] of partialPlaces.entries()) {
+    const partialRequest = await api('/requests', users[7], { ...body, contactMode: 'maps' }, 'POST', 201);
+    requests.push(partialRequest.item.id);
+    const created = await api('/indications', users[index], { requestId: partialRequest.item.id, description: 'Local parcial', place }, 'POST', 201);
+    const detail = await api(`/indications/${created.id}`, users[index], undefined, 'GET');
+    if (place.name) assert.equal(detail.item.place.name, place.name);
+    if (place.address) assert.equal(detail.item.place.address, place.address);
+    if (place.location) assert.deepEqual(detail.item.place.location, place.location);
+    const editedPlace = partialPlaces[(index + 1) % partialPlaces.length];
+    await api(`/indications/${created.id}`, users[index], { description: 'Local parcial editado', place: editedPlace }, 'PATCH');
+    const edited = await api(`/indications/${created.id}`, users[index], undefined, 'GET');
+    if (editedPlace.name) assert.equal(edited.item.place.name, editedPlace.name);
+    if (editedPlace.address) assert.equal(edited.item.place.address, editedPlace.address);
+    if (editedPlace.location) assert.deepEqual(edited.item.place.location, editedPlace.location);
+    await api(`/indications/${created.id}`, users[index], { description: 'Local vazio', place: {} }, 'PATCH', 400);
+  }
+  console.log('OK local parcial: nome, endereço ou mapa isolados na criação, leitura e edição; local vazio rejeitado.');
   // Reconhecimento independente de inscrição em rankings.
   await db.query('DELETE FROM ranking_participacoes WHERE ranking_id = ? AND usuario_id IN (?)', [rankingId, [users[5], users[6]]]);
   const noRankingRequest = await api('/requests', owner, { ...body, contactMode: 'whatsapp' }, 'POST', 201);

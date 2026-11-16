@@ -27,6 +27,8 @@ try {
     await page.getByRole('button', { name: 'Pré-visualizar' }).waitFor();
     await page.getByText(`O solicitante deseja receber: ${labels[mode]}.`).waitFor();
     assert.equal(await page.getByRole('combobox').count(), 0);
+    assert.equal(await page.getByRole('group', { name: 'Links', exact: true }).count(), 0);
+    assert.equal(await page.getByRole('button', { name: /Adicionar link/ }).count(), 0);
     assert.equal(await page.locator('input[name="whatsappNumber"]').count(), mode === 'maps' ? 0 : 1);
     assert.equal(await page.getByLabel('Nome do local', { exact: true }).count(), mode === 'whatsapp' ? 0 : 1);
     await page.getByRole('textbox', { name: /Descrição/ }).fill('Atendimento recomendado para crianças.');
@@ -41,14 +43,32 @@ try {
       assert.equal(await page.getByLabel('WhatsApp de quem você indica').inputValue(), '(17) 99999-8888');
     }
     if (mode !== 'whatsapp') {
-      await page.getByLabel('Nome do local', { exact: true }).fill('Clínica Sorriso');
-      await page.getByLabel('Endereço do local', { exact: true }).fill('Rua A, 10');
       await page.getByRole('button', { name: 'Pré-visualizar' }).click();
-      await page.getByRole('alert').getByText(/confirme a localização/).waitFor();
+      await page.getByRole('alert').getByText(/pelo menos um item/).waitFor();
+      if (mode === 'maps') {
+        for (const [field, text] of [['Nome do local', 'Clínica Sorriso'], ['Endereço do local', 'Rua A, 10']]) {
+          await page.getByLabel('Nome do local', { exact: true }).fill('');
+          await page.getByLabel('Endereço do local', { exact: true }).fill('');
+          await page.getByLabel(field, { exact: true }).fill(text);
+          await page.getByRole('button', { name: 'Pré-visualizar' }).click();
+          await page.getByRole('heading', { name: 'Prévia da indicação' }).waitFor();
+          await page.getByText(text, { exact: true }).waitFor();
+          await page.getByRole('button', { name: 'Voltar para editar', exact: true }).click();
+        }
+        await page.getByLabel('Nome do local', { exact: true }).fill('');
+        await page.getByLabel('Endereço do local', { exact: true }).fill('');
+      }
       await page.getByRole('button', { name: 'Selecionar no mapa', exact: true }).click();
       await page.getByRole('button', { name: 'Usar ponto central', exact: true }).click();
       await page.getByRole('button', { name: 'Usar esta localização', exact: true }).click();
+      await page.getByRole('button', { name: 'Pré-visualizar' }).click();
+      await page.getByRole('heading', { name: 'Prévia da indicação' }).waitFor();
+      await page.getByRole('link', { name: 'Abrir no Google Maps', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Voltar para editar', exact: true }).click();
+      await page.getByLabel('Nome do local', { exact: true }).fill('Clínica Sorriso');
+      await page.getByLabel('Endereço do local', { exact: true }).fill('Rua A, 10');
     }
+    await page.screenshot({ path: `${output}/${mode}-form-${width}.png`, fullPage: true });
     await page.getByRole('button', { name: 'Pré-visualizar' }).click();
     await page.getByRole('heading', { name: 'Prévia da indicação' }).waitFor();
     assert.equal(await page.getByRole('link', { name: /WhatsApp:/ }).count(), mode === 'maps' ? 0 : 1);
@@ -58,9 +78,25 @@ try {
     await page.getByRole('button', { name: 'Confirmar envio', exact: true }).click();
     await page.getByText('Indicação enviada com sucesso', { exact: true }).waitFor();
     assert.equal(submitted.requestId, 123);
+    assert.equal(Object.hasOwn(submitted, 'links'), false);
     if (mode === 'whatsapp') assert.equal(submitted.contactName, 'Clínica Sorriso');
     if (mode !== 'whatsapp') assert.deepEqual(submitted.place.location, { lat: -23.55, lng: -46.63 });
     assert.deepEqual(errors, []);
+    if (mode === 'whatsapp') {
+      await page.goto(`${base}/pedir`);
+      const picker = page.getByRole('group', { name: 'O que você quer receber?', exact: true });
+      await picker.waitFor();
+      assert.equal(await picker.getByRole('radio').count(), 2);
+      await picker.getByRole('radio', { name: 'Localização no mapa', exact: true }).check();
+      await picker.getByRole('radio', { name: 'WhatsApp', exact: true }).check();
+      assert.equal(await picker.getByRole('radio', { name: 'Localização e WhatsApp', exact: true }).count(), 0);
+      await page.screenshot({ path: `${output}/pedir-${width}.png`, fullPage: true });
+      await page.evaluate(() => sessionStorage.setItem('indica_request_draft', JSON.stringify({ title: 'Rascunho antigo', contactMode: 'both' })));
+      await page.goto(`${base}/pedir/preview`);
+      await page.waitForURL('**/pedir');
+      await picker.waitFor();
+      assert.equal(await picker.locator('input:checked').count(), 0);
+    }
     await context.close();
     console.log(`OK ${mode} em ${width}px: modalidade, campos, validação, máscara, mapa, prévia e envio.`);
   }

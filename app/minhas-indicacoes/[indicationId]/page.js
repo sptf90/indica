@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { hasPlaceData } from "@/lib/location";
 import LocationPicker from "@/components/LocationPicker";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import IndicationContactFields from "@/components/IndicationContactFields";
@@ -121,7 +122,6 @@ export default function MinhaIndicacaoDetailPage() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState("");
-  const [linksText, setLinksText] = useState("");
   const [contactName, setContactName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -131,7 +131,6 @@ export default function MinhaIndicacaoDetailPage() {
     const data = await api(`/api/indications/${indicationId}`);
     setItem(data.item);
     setDescription(data.item.description || "");
-    setLinksText((data.item.links || []).join("\n"));
     setSelectedPlace(data.item.place || null);
     setWhatsappNumber(data.item.whatsappNumber ? formatWhatsapp(`+${data.item.whatsappNumber}`) : "");
     setContactName(data.item.contactName || "");
@@ -150,11 +149,8 @@ export default function MinhaIndicacaoDetailPage() {
     setSaving(true);
     try {
       validateIndicationContact(item.contactMode, { place: selectedPlace, whatsappNumber, contactName });
-      const links = linksText
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-      const place = selectedPlace?.name?.trim() && selectedPlace?.address?.trim() ? selectedPlace : null;
+      const links = item.links || [];
+      const place = hasPlaceData(selectedPlace) ? selectedPlace : null;
       await api(`/api/indications/${indicationId}`, {
         method: "PATCH",
         body: JSON.stringify({ description, links, place, whatsappNumber, contactName }),
@@ -288,10 +284,6 @@ export default function MinhaIndicacaoDetailPage() {
               maxLength={500}
               required
             />
-          </label>
-          <label>
-            Links (um por linha)
-            <textarea value={linksText} onChange={(e) => setLinksText(e.target.value)} />
           </label>
           <IndicationContactFields mode={item.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}
             onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}

@@ -57,8 +57,7 @@ test("seleção manual é validada sem chave e sem consultar APIs externas", asy
     assert.equal("selectionToken" in result, false);
     assert.match(result.mapsUrl, /-23.5505217/);
     for (const bad of [
-      { ...input, location: null }, { ...input, location: { lat: 91, lng: 0 } },
-      { ...input, name: "" }, { ...input, address: "" },
+      { ...input, name: "", address: "", location: null }, { ...input, location: { lat: 91, lng: 0 } },
       { ...input, name: "x".repeat(256) }, { ...input, address: "x".repeat(1001) },
       { ...input, name: {} }, { ...input, address: [] },
     ]) await assert.rejects(() => selection.resolveIndicationPlace(bad), { status: 400 });
@@ -97,8 +96,30 @@ test("estabelecimento do Places é resolvido no servidor sem confiar nos dados d
     await google.searchPlacesText({ textQuery: "Muffato em São Paulo SP", simple: true });
     const mask = calls[1].options.headers["X-Goog-FieldMask"];
     assert(mask.includes("places.location")); assert(!mask.includes("rating")); assert(!mask.includes("photos"));
+    delete canonical.displayName;
+    const addressOnly = await google.getPlaceById(canonical.id);
+    assert.equal(addressOnly.name, "");
+    assert.equal(addressOnly.address, canonical.formattedAddress);
+    assert.equal(contact.sameIndicationContact("maps", { place_id: canonical.id, name: "", address: addressOnly.address }, { place_id: canonical.id, name: "", address: addressOnly.address }), false);
+    delete canonical.formattedAddress;
+    delete canonical.location;
+    await assert.rejects(() => google.getPlaceById(canonical.id), { status: 400 });
   } finally {
     globalThis.fetch = originalFetch;
     if (previousKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY; else process.env.GOOGLE_PLACES_API_KEY = previousKey;
+  }
+});
+
+test("local aceita nome, endereço ou ponto isolados, mas rejeita local vazio", async () => {
+  for (const place of [{ name: "Oficina" }, { address: "Rua 10, 100" }, { location: { lat: 0, lng: 0 } }]) {
+    assert.doesNotThrow(() => contact.validateIndicationContact("maps", { place }));
+    const resolved = await selection.resolveIndicationPlace(place);
+    assert.equal(typeof resolved.name, "string");
+    assert.equal(typeof resolved.address, "string");
+    assert.equal(contact.sameIndicationContact("maps", resolved, resolved), false, "Dados parciais não bastam para equivalência automática");
+  }
+  for (const place of [null, {}, { name: "  ", address: "  " }, { location: { lat: 91, lng: 0 } }]) {
+    assert.throws(() => contact.validateIndicationContact("maps", { place }), { status: 400 });
+    await assert.rejects(() => selection.resolveIndicationPlace(place), { status: 400 });
   }
 });

@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { coordinatesOf } from "@/lib/location";
 
 /** Busca explícita: evita chamadas pagas a cada tecla e descarta respostas antigas. */
-export default function MapPlaceSearch({ cityName, cityState, onResults, onSelect, selectedId }) {
+export default function MapPlaceSearch({ cityName, cityState, onResults, onSelect, selectedId, disabled = false }) {
   const id = useId();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -19,6 +19,7 @@ export default function MapPlaceSearch({ cityName, cityState, onResults, onSelec
     setQuery(text); setResults([]); onResults([]); setLoading(false); setMessage(""); setError("");
   }
   async function search() {
+    if (disabled) return;
     const q = query.trim();
     if (q.length < 2) { setError("Digite pelo menos 2 caracteres para buscar."); return; }
     requestRef.current?.abort();
@@ -42,11 +43,11 @@ export default function MapPlaceSearch({ cityName, cityState, onResults, onSelec
   return <div className="map-place-search">
     <label htmlFor={id}>Buscar estabelecimento</label>
     <div className="map-place-search-row">
-      <input id={id} value={query} maxLength={200} placeholder="Ex.: Muffato" autoComplete="off"
+      <input id={id} value={query} maxLength={200} disabled={disabled} placeholder="Nome do local ou endereço" autoComplete="off"
         onChange={event => changeQuery(event.target.value)} onKeyDown={event => {
           if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); search(); }
         }} />
-      <button className="indicar-n-maps-btn" type="button" disabled={loading} onClick={search}>{loading ? "Buscando…" : "Buscar"}</button>
+      <button className="indicar-n-maps-btn" type="button" disabled={disabled || loading} onClick={search}>{loading ? "Buscando…" : "Buscar"}</button>
     </div>
     <p className="muted">{cityName ? `Busca em ${cityName}${cityState ? ` (${cityState})` : ""}. ` : ""}Você também pode marcar um ponto manualmente.</p>
     <p role="status" aria-live="polite">{loading ? "Buscando estabelecimentos…" : message}</p>

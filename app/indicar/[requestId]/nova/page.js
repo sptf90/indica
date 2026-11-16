@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import IndicationContactFields from "@/components/IndicationContactFields";
 import { validateIndicationContact, normalizeWhatsapp, contactModeLabel, needsMaps, needsWhatsapp } from "@/lib/indication-contact";
+import { hasPlaceData } from "@/lib/location";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import LocationPicker from "@/components/LocationPicker";
 import { api } from "@/lib/client-api";
@@ -21,7 +22,6 @@ export default function NovaIndicacaoPage() {
   const [request, setRequest] = useState(null);
   const [step, setStep] = useState("form");
   const [description, setDescription] = useState("");
-  const [links, setLinks] = useState([""]);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [contactName, setContactName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -38,13 +38,9 @@ export default function NovaIndicacaoPage() {
       });
   }, [requestId, router]);
 
-  function cleanLinks() {
-    return links.map((l) => l.trim()).filter(Boolean);
-  }
-
   function buildPlacePayload() {
-    return selectedPlace?.name?.trim() && selectedPlace?.address?.trim() ? {
-      ...selectedPlace, name: selectedPlace.name.trim(), address: selectedPlace.address.trim(),
+    return hasPlaceData(selectedPlace) ? {
+      ...selectedPlace, name: selectedPlace.name?.trim() || "", address: selectedPlace.address?.trim() || "",
     } : null;
   }
 
@@ -63,12 +59,6 @@ export default function NovaIndicacaoPage() {
       setError("Descrição deve ter no máximo 500 caracteres.");
       return;
     }
-    for (const link of cleanLinks()) {
-      try {
-        const url = new URL(link);
-        if (!["http:", "https:"].includes(url.protocol)) throw new Error();
-      } catch { setError("Informe links válidos iniciados por http:// ou https://."); return; }
-    }
     setStep("preview");
   }
 
@@ -81,7 +71,6 @@ export default function NovaIndicacaoPage() {
         body: JSON.stringify({
           requestId: Number(requestId),
           description: description.trim(),
-          links: cleanLinks(),
           place: buildPlacePayload(),
           whatsappNumber,
           contactName,
@@ -137,13 +126,6 @@ export default function NovaIndicacaoPage() {
             <p>{description}</p>
             {request?.contactMode === "whatsapp" ? <p><strong>{contactName}</strong></p> : null}
             {needsWhatsapp(request?.contactMode) && whatsappNumber ? <p><a href={`https://wa.me/${normalizeWhatsapp(whatsappNumber)}`} target="_blank" rel="noreferrer">WhatsApp: +{normalizeWhatsapp(whatsappNumber)}</a></p> : null}
-            {cleanLinks().length ? (
-              <ul className="indicar-n-preview-links">
-                {cleanLinks().map((url) => (
-                  <li key={url}>{url}</li>
-                ))}
-              </ul>
-            ) : null}
             {previewPlace ? (
               <div className="indicar-n-preview-place-card">
                 {selectedPlace?.photoName ? (
@@ -158,7 +140,7 @@ export default function NovaIndicacaoPage() {
                 ) : null}
                 <div>
                   <p className="indicar-n-preview-place-label">Local</p>
-                  <p className="indicar-n-preview-place-name">{previewPlace.name}</p>
+                  <p className="indicar-n-preview-place-name">{previewPlace.name || "Local indicado"}</p>
                   <p className="indicar-n-preview-place-addr">
                     {previewPlace.address}
                   </p>
@@ -241,34 +223,6 @@ export default function NovaIndicacaoPage() {
             />
             <span className="indicar-n-hint">{description.length}/500</span>
           </label>
-
-          <fieldset className="indicar-n-group">
-            <legend>Links</legend>
-            <p className="indicar-n-group-hint">Site, Instagram e outros links opcionais.</p>
-            {links.map((link, index) => (
-              <label key={index} className="indicar-n-field indicar-n-field--tight">
-                <span className="indicar-n-label-sm">Link {index + 1}</span>
-                <input
-                  value={link}
-                  onChange={(e) => {
-                    const next = [...links];
-                    next[index] = e.target.value;
-                    setLinks(next);
-                  }}
-                  placeholder="https://"
-                  inputMode="url"
-                  autoComplete="off"
-                />
-              </label>
-            ))}
-            <button
-              className="indicar-n-add"
-              type="button"
-              onClick={() => setLinks([...links, ""])}
-            >
-              + Adicionar link
-            </button>
-          </fieldset>
 
           <IndicationContactFields mode={request?.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}
             onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}

@@ -4,11 +4,11 @@ Este contrato documenta o fluxo de contato alterado nesta versão. A identidade 
 
 | Capability | Canonical owner | Source of truth | Allowed variants | Verification |
 | --- | --- | --- | --- | --- |
-| Form | components/ContactModePicker.js e components/IndicationContactFields.js | lib/indication-contact.js e serviços do servidor | Pedido: Maps, WhatsApp ou ambos; indicação antiga: formato livre | scripts/smoke-contact-scoring.mjs e verificação no navegador |
+| Form | components/ContactModePicker.js e components/IndicationContactFields.js | lib/indication-contact.js e serviços do servidor | Novo pedido: Maps ou WhatsApp; pedidos anteriores: ambos ou formato livre | scripts/smoke-contact-scoring.mjs e verificação no navegador |
 | Seleção no mapa | components/LocationPicker.js e components/MapLocationPicker.js | Leaflet/OpenStreetMap e validação por coordenadas em lib/map-selection.js | Clique ou confirmação do ponto central | Teclado, mobile e prévia |
 | CRUD | lib/requests-service.js e lib/indications-service.js | Estado persistido e autorização no servidor | Pedido editável antes da primeira participação; indicação editável antes da comparação | scripts/smoke-contact-scoring.mjs |
 
-Novos pedidos exigem a escolha explícita de um canal; a prévia preserva essa escolha. Localização exige confirmar um estabelecimento encontrado na busca ou preencher nome e endereço manualmente e confirmar um ponto no mapa. WhatsApp exige um número válido com DDD, ou + e DDI para outro país. Ambos exige todos esses dados. Links adicionais não substituem os campos. Sem configuração Google, o mapa usa Leaflet/OpenStreetMap para marcação manual. A busca por nome usa Places API (New) no servidor e exibe seus resultados somente no Google Maps. Uma falha no mapa apresenta feedback e permite nova tentativa, mantendo os textos preenchidos.
+Novos pedidos exigem a escolha explícita entre Localização no mapa e WhatsApp, sem opção combinada; a prévia preserva essa escolha. Localização exige pelo menos um item: nome, endereço ou ponto confirmado no mapa. Nome e endereço têm busca na API; selecionar um resultado preenche os dados juntos. WhatsApp exige um número válido com DDD, ou + e DDI para outro país. Pedidos históricos com ambos exigem um item do local e o WhatsApp. Nova indicação não oferece campos de links adicionais; os dados obrigatórios da modalidade são o foco do formulário. Sem configuração Google, o mapa usa Leaflet/OpenStreetMap para marcação manual. A busca por nome usa Places API (New) no servidor e exibe seus resultados somente no Google Maps. Uma falha no mapa apresenta feedback e permite nova tentativa, mantendo os textos preenchidos.
 
 Números brasileiros são persistidos com DDI 55 e sem formatação. Localizações manuais usam identidade por coordenadas, com nome/endereço declarados pela pessoa e validação local. Na seleção Places (`google_places`), o servidor resolve novamente o Place ID: nome, endereço e coordenadas canônicos substituem o conteúdo enviado pelo cliente. IDs em seleções manuais são descartados. A latitude e longitude são validadas e persistidas como DECIMAL com sete casas. Edição e criação usam as mesmas regras.
 
@@ -83,3 +83,9 @@ Patrocínios e rankings continuam nos fluxos existentes. Pedidos, indicações, 
 `/admin` mostra resumo, filas com itens e atividade recente; `/admin/sistema` concentra integrações e prévias. `lib/admin-dashboard.js` separa as consultas de resumo/sistema do CRUD em `lib/admin-service.js`. Os dois endpoints exigem gestão administrativa, com testes de acesso negado para usuário, empresa e prévias. Nenhuma regra de pontuação, reputação ou cadastro foi alterada.
 
 Verificação: `npm run test:admin-dashboard`, `test:admin-navigation`, `test:admin-console` e `test:responsive`. Consulte `docs/administracao.md` para responsabilidades e rotas.
+
+## Local por nome, endereço ou mapa
+
+`PlaceLookupField` consulta a mesma API por nome e por endereço, com debounce, cancelamento, estados de busca e seleção por botões nativos. `MapPlaceSearch` mantém a pesquisa dentro do mapa. `validatePlaceData` exige pelo menos um dado e valida tipos, limites e coordenadas tanto no cliente quanto no servidor. Criação, prévia, edição e persistência aceitam locais parciais. Não há campos de links na criação ou edição da indicação; a edição preserva os links históricos.
+
+A seleção de uma sugestão é resolvida novamente no servidor via Place ID. Dados incompletos não são considerados equivalentes somente por nome, endereço ou coordenadas isolados. Credenciais Google são necessárias para buscas reais e não são expostas nos resultados da API.

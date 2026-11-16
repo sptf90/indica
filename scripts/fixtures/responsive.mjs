@@ -59,6 +59,6 @@ export async function mockApi(route, role) {
 }
 export async function seedBrowser(context) {
   await context.addInitScript(({ longTitle, longDescription }) => {
-    sessionStorage.setItem('indica_request_draft', JSON.stringify({ title: longTitle, details: longDescription, contactMode: 'both', cityId: 1, cityName: 'São Paulo', state: 'SP', cityLabel: 'São Paulo (SP)' }));
+    sessionStorage.setItem('indica_request_draft', JSON.stringify({ title: longTitle, details: longDescription, contactMode: 'maps', cityId: 1, cityName: 'São Paulo', state: 'SP', cityLabel: 'São Paulo (SP)' }));
   }, { longTitle, longDescription });
 }

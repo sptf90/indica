@@ -46,7 +46,16 @@ try {
     page.on('pageerror', err => { errors.push(err.message); console.log('PAGEERROR', err.message); }); page.on('request', req => urls.push(req.url()));
     await page.route('https://maps.googleapis.com/maps/api/js?**', route => route.fulfill({ contentType: 'application/javascript', body: readFileSync('scripts/fixtures/google-maps-browser.js') }));
     await page.goto(`${base}/indicar/${rid}/nova`);
-    await page.getByRole('button', { name: 'Selecionar no mapa', exact: true }).click();
+    const lookup = page.getByLabel(index === 0 ? 'Nome do local' : 'Endereço do local', { exact: true });
+    await lookup.fill('Lenta');
+    await lookup.press('Enter');
+    await lookup.fill(index === 0 ? 'Muffato' : 'Rua das Flores');
+    await lookup.press('Enter');
+    const fieldResults = page.getByRole('list', { name: index === 0 ? 'Resultados por nome' : 'Resultados por endereço', exact: true });
+    await fieldResults.locator('button').first().click();
+    assert.equal(await page.getByLabel('Nome do local', { exact: true }).inputValue(), places[0].displayName.text);
+    assert.equal(await page.getByLabel('Endereço do local', { exact: true }).inputValue(), places[0].formattedAddress);
+    await page.getByRole('button', { name: 'Ajustar localização no mapa', exact: true }).click();
     await page.waitForTimeout(100);
     const search = page.getByLabel('Buscar estabelecimento', { exact: true });
     await search.waitFor().catch(async err => { await page.screenshot({ path: `${output}/erro.png`, fullPage: true }); console.log(await page.locator('main').innerText()); console.log(serverOutput); throw err; });
@@ -57,7 +66,7 @@ try {
     await search.fill('Muffato'); await search.press('Enter');
     const result = page.locator('.map-place-result').first(); await result.waitFor();
     await page.waitForTimeout(700); assert.equal(await page.locator('.map-place-result').count(), 2);
-    assert.equal(await page.locator('test-map-marker').count(), 2);
+    assert.equal(await page.locator('test-map-marker:not([title="Local selecionado"])').count(), 2);
     if (index === 0) await result.click(); else await page.locator('test-map-marker[title="1. Super Muffato Centro"]').click();
     await page.locator('.map-location-candidate').getByText('Super Muffato Centro', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), true);

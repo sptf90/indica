@@ -1,32 +1,29 @@
 "use client";
 
-import { useId } from "react";
+import { useState } from "react";
 import MapLocationPicker from "@/components/MapLocationPicker";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
+import PlaceLookupField from "@/components/PlaceLookupField";
 import { coordinatesOf } from "@/lib/location";
 
-/** Busca de estabelecimentos e seleção manual compartilham o mesmo local confirmado. */
 export default function LocationPicker({ value, onChange, cityName, cityState, required = true }) {
-  const hintId = useId();
+  const [selectionVersion, setSelectionVersion] = useState(0);
   const point = coordinatesOf(value);
   function updateField(field, text) {
     onChange({ ...value, source: "manual", selectionSource: "map_pin", placeId: null, mapsUrl: null, photoName: null, [field]: text });
   }
+  function choosePlace(place) {
+    setSelectionVersion(version => version + 1);
+    onChange({ ...place, source: "google_maps", selectionSource: "google_places" });
+  }
   return (
     <div className="location-picker">
-      <p className="indicar-n-group-hint">Busque o estabelecimento no mapa para preencher os dados, ou informe o nome e endereço e marque um ponto manualmente.</p>
-      <label className="indicar-n-field">
-        <span>Nome do local</span>
-        <input value={value?.name || ""} onChange={(event) => updateField("name", event.target.value)}
-          maxLength={255} required={required} placeholder="Ex.: Oficina do João" autoComplete="off" />
-      </label>
-      <label className="indicar-n-field">
-        <span>Endereço do local</span>
-        <input value={value?.address || ""} onChange={(event) => updateField("address", event.target.value)}
-          aria-describedby={hintId} maxLength={1000} required={required} placeholder="Rua, número, bairro e cidade" autoComplete="off" />
-      </label>
-      <p id={hintId} className="indicar-n-hint">Confira o nome e o endereço. A navegação usa as coordenadas do local confirmado.</p>
-      <MapLocationPicker value={value} onChange={onChange} cityName={cityName} cityState={cityState} />
+      <p className="indicar-n-group-hint">{required ? "Preencha pelo menos um: nome, endereço ou mapa." : "Informe nome, endereço ou selecione no mapa, se desejar."} Ao escolher uma sugestão, os dados do local são preenchidos juntos.</p>
+      <PlaceLookupField label="Nome do local" kind="name" value={value?.name || ""} maxLength={255}
+        onChange={text => updateField("name", text)} onSelect={choosePlace} cityName={cityName} cityState={cityState} resetKey={selectionVersion} />
+      <PlaceLookupField label="Endereço do local" kind="address" value={value?.address || ""} maxLength={1000}
+        onChange={text => updateField("address", text)} onSelect={choosePlace} cityName={cityName} cityState={cityState} resetKey={selectionVersion} />
+      <MapLocationPicker value={value} onChange={place => { setSelectionVersion(version => version + 1); onChange(place); }} cityName={cityName} cityState={cityState} />
       {point ? <div className="map-location-result" role="status">
         <strong>Localização marcada</strong>
         <p>{point.lat.toFixed(6)}, {point.lng.toFixed(6)}</p>

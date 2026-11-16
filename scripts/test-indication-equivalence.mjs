@@ -36,3 +36,12 @@ test('números internacionais persistidos mantêm o DDI na comparação', () => 
   assert.equal(contact.sameIndicationContact('whatsapp', { whatsapp_number: '12025550123' }, { whatsapp_number: '+1 (202) 555-0123' }), true);
   assert.equal(contact.sameIndicationContact('whatsapp', { whatsapp_number: '12025550123' }, { whatsapp_number: '5512999999999' }), false);
 });
+
+test('novos pedidos aceitam apenas localização ou WhatsApp e preservam a leitura do legado', () => {
+  assert.deepEqual(contact.CONTACT_MODES.map(item => item.value), ['maps', 'whatsapp']);
+  for (const mode of ['maps', 'whatsapp']) assert.equal(contact.validateContactMode(mode), mode);
+  for (const mode of ['both', 'free', '', null]) assert.throws(() => contact.validateContactMode(mode), { status: 400 });
+  assert.equal(contact.contactModeLabel('both'), 'Localização e WhatsApp');
+  assert.equal(contact.needsMaps('both'), true);
+  assert.equal(contact.needsWhatsapp('both'), true);
+});

@@ -4,13 +4,13 @@ O GoIndica conecta pedidos a recomendações da comunidade. A escolha confirma u
 
 ## Modalidades
 
-O pedido continua sendo a fonte da modalidade. `/indicar/[requestId]/nova` e a edição de indicações compartilham a validação com o servidor em `lib/indication-contact.js`. O payload não altera a modalidade do pedido.
+Novos pedidos e a edição oferecem apenas Localização no mapa ou WhatsApp. A modalidade combinada não pode ser selecionada ou publicada, inclusive por rascunhos antigos e pela API. Pedidos já gravados com ambos continuam recebendo indicações e mantendo seu histórico. O pedido continua sendo a fonte da modalidade. `/indicar/[requestId]/nova` e a edição de indicações compartilham a validação com o servidor em `lib/indication-contact.js`. O payload não altera a modalidade do pedido.
 
-- `maps`: descrição, nome, endereço e coordenadas confirmadas no mapa.
+- `maps`: descrição e pelo menos um item do local: nome, endereço ou ponto confirmado no mapa. Nome e endereço consultam a Places API; escolher uma sugestão preenche a identidade do estabelecimento.
 - `whatsapp`: descrição, nome do profissional/empresa/contato e número válido com DDD. O número é apresentado com máscara e salvo com DDI, sem pontuação.
-- `both`: descrição, nome/endereço/localização confirmada e WhatsApp.
+- `both` (somente pedidos existentes): descrição, pelo menos um item do local e WhatsApp.
 
-Links HTTP(S) são opcionais. Pedidos legados sem modalidade mantêm o formato livre. A tela de criação de pedidos não foi alterada.
+A tela Nova indicação não apresenta campos de links adicionais: o preenchimento fica concentrado na descrição e no contato solicitado. Links de registros existentes continuam compatíveis com o sistema. Pedidos legados sem modalidade mantêm o formato livre. A criação e a prévia validam as duas modalidades disponíveis.
 
 ## Identificação
 
@@ -48,3 +48,5 @@ A migração classifica as validações antigas e separa os contadores. Pontos d
 - `npm run test:contacts`: integração com MySQL e aplicação em `BASE_URL` (padrão `http://127.0.0.1:3001`), incluindo três modalidades, classificação, pontos, reputação, isolamento, resposta tardia, avaliação inválida/nova escolha, ausência de ranking e avaliação concorrente. Cria e remove somente suas fixtures.
 - `npm run test:map-search`: navegador e banco reais com Google simulado.
 - `npm run build`: compilação de produção.
+
+Nome/endereço isolados e marcações sem identidade suficiente não geram equivalência automaticamente. Resultados selecionados da API preservam o Place ID e são resolvidos novamente no servidor. A edição também aceita local parcial e não apresenta campo para adicionar links; links históricos são preservados.
