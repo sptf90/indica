@@ -18,6 +18,7 @@ export async function GET(_request, { params }) {
     const [rows] = await pool.query(
       `SELECT u.id, u.nome_usuario, u.foto_url, u.cidade_id, u.reputacao,
               u.contagem_indicacoes_validas, u.contagem_selecionadas_avaliadas,
+              u.contagem_validas_equivalentes, u.contagem_validas_escolhidas,
               c.nome AS city_name, c.estado AS city_state
        FROM usuarios u
        LEFT JOIN cidades c ON c.id = u.cidade_id

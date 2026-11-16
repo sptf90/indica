@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import LocationPicker from "@/components/LocationPicker";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import IndicationContactFields from "@/components/IndicationContactFields";
-import { validateIndicationContact } from "@/lib/indication-contact";
+import { formatWhatsapp, validateIndicationContact } from "@/lib/indication-contact";
 import ReputationBadge from "@/components/ReputationBadge";
 import { api } from "@/lib/client-api";
 
@@ -34,7 +34,7 @@ function OutcomePanel({ outcome }) {
   if (!outcome?.kind || outcome.kind === "pending") return null;
 
   const tone =
-    outcome.kind === "chosen_valid"
+    ["chosen_valid", "equivalent_valid"].includes(outcome.kind)
       ? "win"
       : outcome.kind === "chosen_invalid"
         ? "lose"
@@ -100,7 +100,7 @@ function OutcomePanel({ outcome }) {
             </p>
             {points != null ? (
               <p className="ind-outcome-points">
-                Pontos nos rankings:{" "}
+                Pontos atribuídos:{" "}
                 <strong>{formatDelta(points)}</strong>
               </p>
             ) : null}
@@ -122,6 +122,7 @@ export default function MinhaIndicacaoDetailPage() {
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState("");
   const [linksText, setLinksText] = useState("");
+  const [contactName, setContactName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -132,7 +133,8 @@ export default function MinhaIndicacaoDetailPage() {
     setDescription(data.item.description || "");
     setLinksText((data.item.links || []).join("\n"));
     setSelectedPlace(data.item.place || null);
-    setWhatsappNumber(data.item.whatsappNumber || "");
+    setWhatsappNumber(data.item.whatsappNumber ? formatWhatsapp(`+${data.item.whatsappNumber}`) : "");
+    setContactName(data.item.contactName || "");
   }
 
   useEffect(() => {
@@ -147,7 +149,7 @@ export default function MinhaIndicacaoDetailPage() {
     setError("");
     setSaving(true);
     try {
-      validateIndicationContact(item.contactMode, { place: selectedPlace, whatsappNumber });
+      validateIndicationContact(item.contactMode, { place: selectedPlace, whatsappNumber, contactName });
       const links = linksText
         .split("\n")
         .map((l) => l.trim())
@@ -155,7 +157,7 @@ export default function MinhaIndicacaoDetailPage() {
       const place = selectedPlace?.name?.trim() && selectedPlace?.address?.trim() ? selectedPlace : null;
       await api(`/api/indications/${indicationId}`, {
         method: "PATCH",
-        body: JSON.stringify({ description, links, place, whatsappNumber }),
+        body: JSON.stringify({ description, links, place, whatsappNumber, contactName }),
       });
       setEditing(false);
       await load();
@@ -235,6 +237,7 @@ export default function MinhaIndicacaoDetailPage() {
                 ))}
               </ul>
             ) : null}
+            {item.contactName ? <p><strong>{item.contactName}</strong></p> : null}
             {item.whatsappNumber ? <p><a href={`https://wa.me/${item.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp: +{item.whatsappNumber}</a></p> : null}
             {item.place ? (
               <p className="row-meta">
@@ -290,7 +293,7 @@ export default function MinhaIndicacaoDetailPage() {
             Links (um por linha)
             <textarea value={linksText} onChange={(e) => setLinksText(e.target.value)} />
           </label>
-          <IndicationContactFields mode={item.contactMode} whatsappNumber={whatsappNumber}
+          <IndicationContactFields mode={item.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}
             onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}
             cityName={item.cityName} cityState={item.cityState} />
           {!item.contactMode ? <LocationPicker value={selectedPlace} onChange={setSelectedPlace}

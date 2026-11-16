@@ -231,7 +231,7 @@ export default function PerfilPage() {
                   <span
                     title="Indicações avaliadas como válidas no histórico — não expiram."
                   >
-                    Indicações válidas: {user.validIndicationCount}
+                    Indicações válidas: {user.validIndicationCount} ({user.chosenValidCount} escolhidas e {user.equivalentValidCount} por equivalência)
                   </span>{" "}
                   · Avaliações: {user.selectedAndEvaluatedCount}
                 </p>
@@ -390,7 +390,7 @@ export default function PerfilPage() {
                           ? new Date(item.createdAt).toLocaleString("pt-BR")
                           : ""}
                         {" · "}
-                        {item.outcome === "valid" ? "Válida" : "Não válida"}
+                        {item.outcome === "valid" ? (item.validationType === "equivalent" ? "Válida — Por equivalência" : "Válida — Escolhida") : "Não válida"}
                         {" · "}
                         {item.reputationBefore} → {formatDelta(item.delta)} →{" "}
                         {item.reputationAfter}

@@ -33,7 +33,7 @@ test("navegação usa o mesmo ponto nos links HTTPS de Google Maps e Waze", () =
 });
 
 test("equivalência por ponto preserva lugares identificados distintos", () => {
-  const chosen = { latitude: "-23.5505200", longitude: "-46.6333080", place_id: null };
+  const chosen = { name: "Oficina", address: "Rua 10", latitude: "-23.5505200", longitude: "-46.6333080", place_id: null };
   assert.equal(contact.sameIndicationContact("maps", chosen, { ...chosen }), true);
   assert.equal(contact.sameIndicationContact("maps", chosen, { latitude: -24, longitude: -47 }), false);
   assert.equal(contact.sameIndicationContact("maps", { ...chosen, place_id: "a" }, { ...chosen, place_id: "b" }), false);

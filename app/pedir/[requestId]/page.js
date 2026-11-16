@@ -330,7 +330,7 @@ function PedidoDetailPage() {
           <div className="pedido-chosen-head">
             <h2 id="chosen-heading">Escolhas e avaliações</h2>
             <p className="pedido-cmp-lead">
-              Indicações que você já escolheu, com o resultado da avaliação.
+              Indicações escolhidas e contribuições reconhecidas por equivalência, com o resultado da avaliação.
             </p>
           </div>
           <ul className="pedido-chosen-list">
@@ -361,6 +361,7 @@ function PedidoDetailPage() {
                       </span>
                     </div>
                     <h3 className="chosen-desc">{item.description}</h3>
+                    {item.contactName ? <p>{item.contactName}</p> : null}
                     {item.place ? (
                       <div className="cmp-place">
                         <span className="cmp-place-icon" aria-hidden>
@@ -469,6 +470,7 @@ function PedidoDetailPage() {
                   </div>
 
                   <p className="cmp-desc">{item.description}</p>
+                  {item.contactName ? <p>{item.contactName}</p> : null}
 
                   {item.place ? (
                     <div className="cmp-place">

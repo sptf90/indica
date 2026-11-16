@@ -37,7 +37,7 @@ async function api(path, uid, body, method = 'POST', status = 200) {
 try {
   const [[city]] = await db.query('SELECT id FROM cidades LIMIT 1');
   assert(city, 'É necessária uma cidade no banco de teste.');
-  for (let index = 0; index < 7; index++) {
+  for (let index = 0; index < 8; index++) {
     const name = `contact_${suffix}_${index}`;
     const [insert] = await db.query('INSERT INTO usuarios (nome_usuario, email, senha_hash, cidade_id, codigo_compartilhamento) VALUES (?, ?, ?, ?, ?)', [name, `${name}@example.com`, 'fixture', city.id, `${suffix}${index}`]);
     users.push(insert.insertId);
@@ -59,12 +59,15 @@ try {
     const rid = created.item.id; requests.push(rid);
     assert.equal(created.item.contactMode, mode);
     await api('/indications', users[1], { requestId: rid, description: 'Sem contato' }, 'POST', 400);
+    const eligible = await api(`/indications/eligible/${rid}`, users[1], undefined, 'GET');
+    assert.equal(eligible.item.contactMode, mode);
     if (mode === 'whatsapp') {
-      const createdInd = await api('/indications', users[1], { requestId: rid, description: 'Contato', whatsappNumber: '(11) 99999-1234' }, 'POST', 201);
-      await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato', whatsappNumber: 'ruim' }, 'PATCH', 400);
-      await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato editado', whatsappNumber: '+55 (11) 99999-5678' }, 'PATCH');
+      const createdInd = await api('/indications', users[1], { requestId: rid, description: 'Contato', contactName: 'Clínica Sorriso', whatsappNumber: '(11) 99999-1234' }, 'POST', 201);
+      await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato', contactName: 'Clínica Sorriso', whatsappNumber: 'ruim' }, 'PATCH', 400);
+      await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato editado', contactName: 'Clínica Sorriso', whatsappNumber: '+55 (11) 99999-5678' }, 'PATCH');
       const detail = await api(`/indications/${createdInd.id}`, users[1], undefined, 'GET');
       assert.equal(detail.item.whatsappNumber, '5511999995678');
+      assert.equal(detail.item.contactName, 'Clínica Sorriso');
       await db.query('DELETE FROM notificacoes WHERE indicacao_id = ?', [createdInd.id]);
       await db.query('DELETE FROM indicacoes WHERE id = ?', [createdInd.id]);
     }
@@ -73,36 +76,48 @@ try {
     const ids = [];
     for (let index = 0; index < seeds.length; index++) {
       const [place, phone, cycle, deleted] = seeds[index];
-      const [insert] = await db.query("INSERT INTO indicacoes (pedido_id, indicador_id, descricao, whatsapp_numero, numero_ciclo, excluido_em) VALUES (?, ?, 'Indicação de teste', ?, ?, IF(?, UTC_TIMESTAMP(), NULL))", [rid, users[index + 1], mode === 'maps' ? null : phone, cycle, deleted]);
+      const [insert] = await db.query("INSERT INTO indicacoes (pedido_id, indicador_id, descricao, whatsapp_numero, numero_ciclo, excluido_em) VALUES (?, ?, 'Indicação de teste', ?, ?, IF(?, UTC_TIMESTAMP(), NULL))", [rid, users[index + 1], mode === 'maps' ? null : mode === 'both' && index === 1 ? '5511999990001' : phone, cycle, deleted]);
       ids.push(insert.insertId);
       if (mode !== 'whatsapp') await db.query("INSERT INTO indicacao_locais (indicacao_id, origem, place_id, nome, endereco) VALUES (?, 'google_maps', ?, 'Teste', 'Endereço')", [insert.insertId, place]);
     }
     await api(`/requests/${rid}/open-comparison`, owner, {});
     await api(`/requests/${rid}/select`, owner, { indicationId: ids[0] });
+    // Mesmo uma inserção fora da API após o bloqueio não pode gerar reconhecimento.
+    const [late] = await db.query("INSERT INTO indicacoes (pedido_id, indicador_id, descricao, whatsapp_numero, numero_ciclo, status, bloqueada_em, criado_em) VALUES (?, ?, 'Resposta tardia', '5511999990001', 1, 'in_evaluation', UTC_TIMESTAMP(), UTC_TIMESTAMP() + INTERVAL 1 DAY)", [rid, users[7]]);
+    if (mode !== 'whatsapp') await db.query("INSERT INTO indicacao_locais (indicacao_id, origem, place_id, nome, endereco) VALUES (?, 'google_maps', 'place-A', 'Teste', 'Endereço')", [late.insertId]);
     const comparison = await api(`/requests/${rid}/comparison`, owner, undefined, 'GET');
     assert.equal(JSON.stringify(comparison).includes('5511999990002'), false, 'Contatos de outras indicações devem permanecer ocultos após escolha.');
     await api(`/requests/${rid}/evaluate`, owner, { outcome: 'valid' });
     await api(`/requests/${rid}/evaluate`, owner, { outcome: 'valid' }, 'POST', 400);
     const [rows] = await db.query('SELECT id, resultado, selecionada_em FROM indicacoes WHERE id IN (?) ORDER BY id', [ids]);
-    const expected = mode === 'maps' ? [0, 1] : mode === 'whatsapp' ? [0, 2] : [0, 1, 2];
+    const [[lateScore]] = await db.query('SELECT COUNT(*) AS n FROM historico_reputacao WHERE indicacao_id = ?', [late.insertId]);
+    assert.equal(Number(lateScore.n), 0);
+    const expected = mode === 'maps' ? [0, 1] : mode === 'whatsapp' ? [0, 2] : [0, 1];
     for (let index = 0; index < rows.length; index++) assert.equal(rows[index].resultado === 'valid', expected.includes(index), `${mode}: indicação ${index}`);
     for (const index of expected) {
       const [[score]] = await db.query('SELECT SUM(delta) AS points, COUNT(*) AS n FROM ledger_pontuacao WHERE ranking_id = ? AND indicacao_id = ?', [rankingId, ids[index]]);
-      assert.equal(Number(score.points), 10);
+      assert.equal(Number(score.points), index === 0 ? 10 : 5);
       assert.equal(Number(score.n), 1);
       const [[reputation]] = await db.query('SELECT reputacao FROM usuarios WHERE id = ?', [users[index + 1]]);
       assert.equal(Number(reputation.reputacao), 100);
+      const [[history]] = await db.query('SELECT tipo_validacao, pontos_atribuidos, indicacao_origem_id FROM historico_reputacao WHERE indicacao_id = ?', [ids[index]]);
+      assert.equal(history.tipo_validacao, index === 0 ? 'chosen' : 'equivalent');
+      assert.equal(history.pontos_atribuidos, index === 0 ? 10 : 5);
+      assert.equal(history.indicacao_origem_id, index === 0 ? null : ids[0]);
+      const profile = await api('/auth/me', users[index + 1], undefined, 'GET');
+      assert.equal(profile.user.validIndicationCount, profile.user.chosenValidCount + profile.user.equivalentValidCount);
+      assert.equal(profile.user.hasEvaluations, true);
       const detail = await api(`/indications/${ids[index]}`, users[index + 1], undefined, 'GET');
       assert.equal(detail.item.outcome.wasChosen, index === 0);
       if (index !== 0) assert.match(detail.item.outcome.title, /também/);
     }
-    console.log(`OK ${mode}: campos obrigatórios, equivalência, +10 pontos, privacidade, idempotência e isolamento de ciclo.`);
+    console.log(`OK ${mode}: campos obrigatórios, equivalência, +10/+5 pontos, privacidade, idempotência e isolamento de ciclo.`);
   }
   // Uma avaliação inválida afeta somente a escolhida.
   const invalidRequest = await api('/requests', owner, { ...body, contactMode: 'whatsapp' }, 'POST', 201);
   const invalidRid = invalidRequest.item.id; requests.push(invalidRid);
   const invalidIds = [];
-  for (const uid of users.slice(1, 3)) {
+  for (const uid of users.slice(1, 4)) {
     const [insert] = await db.query("INSERT INTO indicacoes (pedido_id, indicador_id, descricao, whatsapp_numero) VALUES (?, ?, 'Contato de teste', '5511999990001')", [invalidRid, uid]);
     invalidIds.push(insert.insertId);
   }
@@ -114,6 +129,12 @@ try {
   const [[noScore]] = await db.query('SELECT COUNT(*) AS n FROM ledger_pontuacao WHERE indicacao_id = ?', [invalidIds[1]]);
   assert.equal(Number(noScore.n), 0);
   console.log('OK avaliação inválida: nenhuma pontuação ou penalidade propagada.');
+  await api(`/requests/${invalidRid}/select`, owner, { indicationId: invalidIds[1] });
+  await api(`/requests/${invalidRid}/evaluate`, owner, { outcome: 'valid' });
+  const [afterRetry] = await db.query('SELECT tipo_validacao, resultado FROM indicacoes WHERE id IN (?) ORDER BY id', [invalidIds]);
+  assert.deepEqual(afterRetry.map(row => row.resultado), ['invalid', 'valid', 'valid']);
+  assert.deepEqual(afterRetry.map(row => row.tipo_validacao), [null, 'chosen', 'equivalent']);
+  console.log('OK nova escolha após inválida: principal e equivalência usam a indicação confirmada posteriormente.');
   // Seleção manual por coordenadas: nenhum serviço externo é necessário.
   const manualPin = (location) => ({ source: 'manual', selectionSource: 'map_pin', placeId: null,
     name: 'Oficina do teste', address: 'Rua do teste, 10', location });
@@ -146,17 +167,44 @@ try {
   const pinHistory = await api(`/requests/${pinRid}`, owner, undefined, 'GET');
   assert.equal(pinHistory.chosenIndications.length, 2);
   for (const item of pinHistory.chosenIndications) assert.deepEqual(item.place.location, adjustedPoint);
-  for (const iid of [createdA.id, createdB.id]) {
+  for (const [index, iid] of [createdA.id, createdB.id].entries()) {
     const [[score]] = await db.query('SELECT SUM(delta) AS points FROM ledger_pontuacao WHERE ranking_id = ? AND indicacao_id = ?', [rankingId, iid]);
-    assert.equal(Number(score.points), 10);
+    assert.equal(Number(score.points), index === 0 ? 10 : 5);
   }
+  // Reconhecimento independente de inscrição em rankings.
+  await db.query('DELETE FROM ranking_participacoes WHERE ranking_id = ? AND usuario_id IN (?)', [rankingId, [users[5], users[6]]]);
+  const noRankingRequest = await api('/requests', owner, { ...body, contactMode: 'whatsapp' }, 'POST', 201);
+  const noRankingRid = noRankingRequest.item.id; requests.push(noRankingRid);
+  const noRankingIds = [];
+  for (const uid of [users[5], users[6]]) {
+    const created = await api('/indications', uid, { requestId: noRankingRid, description: 'Mesmo profissional', contactName: 'Dentista', whatsappNumber: '(17) 99999-8888', contactMode: 'maps' }, 'POST', 201);
+    noRankingIds.push(created.id);
+  }
+  await api('/indications', users[5], { requestId: noRankingRid, description: 'Participação duplicada', contactName: 'Dentista', whatsappNumber: '17999998888' }, 'POST', 400);
+  await api(`/requests/${noRankingRid}/open-comparison`, owner, {});
+  await api('/indications', users[7], { requestId: noRankingRid, description: 'Após bloqueio', contactName: 'Dentista', whatsappNumber: '17999998888' }, 'POST', 400);
+  await api(`/requests/${noRankingRid}/select`, owner, { indicationId: noRankingIds[0] });
+  const responses = await Promise.all([1, 2].map(() => fetch(`${base}/api/requests/${noRankingRid}/evaluate`, { method: 'POST', headers: { Cookie: cookie(owner), 'Content-Type': 'application/json' }, body: JSON.stringify({ outcome: 'valid' }) })));
+  assert.deepEqual(responses.map(res => res.status).sort(), [200, 400]);
+  for (const [index, iid] of noRankingIds.entries()) {
+    const [[history]] = await db.query('SELECT COUNT(*) AS n, SUM(pontos_atribuidos) AS points FROM historico_reputacao WHERE indicacao_id = ?', [iid]);
+    assert.equal(Number(history.n), 1);
+    assert.equal(Number(history.points), index === 0 ? 10 : 5);
+    const [[ledger]] = await db.query('SELECT COUNT(*) AS n FROM ledger_pontuacao WHERE indicacao_id = ?', [iid]);
+    assert.equal(Number(ledger.n), 0);
+    const me = await api('/auth/me', users[index + 5], undefined, 'GET');
+    assert.equal(me.user.accumulatedPoints, index === 0 ? 10 : 5);
+    assert.equal(me.user.selectedAndEvaluatedCount, index === 0 ? 1 : 0);
+    assert.equal(me.user.equivalentValidCount, index === 0 ? 0 : 1);
+  }
+  console.log('OK sem ranking: pontuação acumulada, contadores separados, modalidade imutável e avaliações concorrentes sem duplicação.');
   const mapConfig = await api('/places/map-config', owner, undefined, 'GET');
   assert.equal(mapConfig.provider, 'openstreetmap');
   assert.equal(mapConfig.browserKey, undefined);
   assert.match(mapConfig.tileUrl, /^https:\/\//);
   const anonymous = await fetch(`${base}/api/places/map-config`);
   assert.equal(anonymous.status, 401);
-  console.log('OK mapa: coordenadas exatas na criação, edição, comparação e histórico; validação manual, autorização e +10 pontos para o mesmo ponto.');
+  console.log('OK mapa: coordenadas exatas na criação, edição, comparação e histórico; validação manual, autorização e +10/+5 pontos para o mesmo estabelecimento.');
   console.log('Todos os testes de contatos e pontuação passaram.');
 } finally {
   if (requests.length) {

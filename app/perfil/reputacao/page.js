@@ -62,6 +62,13 @@ export default function ReputacaoHistoryPage() {
           size="profile"
         />
       </div>
+      <dl className="activity-list">
+        <div className="activity-row static"><dt>Indicações realizadas</dt><dd>{user.totalIndicationCount}</dd></div>
+        <div className="activity-row static"><dt>Indicações válidas</dt><dd>{user.validIndicationCount}</dd></div>
+        <div className="activity-row static"><dt>Válidas — Escolhidas</dt><dd>{user.chosenValidCount}</dd></div>
+        <div className="activity-row static"><dt>Válidas — Por equivalência</dt><dd>{user.equivalentValidCount}</dd></div>
+        <div className="activity-row static"><dt>Pontuação acumulada</dt><dd>{user.accumulatedPoints}</dd></div>
+      </dl>
       <p className="muted">
         Cada linha: data, pedido, resultado, reputação anterior → variação →
         posterior.
@@ -81,10 +88,13 @@ export default function ReputacaoHistoryPage() {
                       ? new Date(item.createdAt).toLocaleString("pt-BR")
                       : ""}
                     {" · "}
-                    {item.outcome === "valid" ? "Válida" : "Não válida"}
+                    {item.outcome === "valid" ? (item.validationType === "equivalent" ? "Válida — Por equivalência" : "Válida — Escolhida") : "Não válida"}
                     {" · "}
                     {item.reputationBefore} → {formatDelta(item.delta)} →{" "}
                     {item.reputationAfter}
+                    {item.points != null ? ` · ${formatDelta(item.points)} pontos` : ""}
+                    {item.indicationId ? <> · <Link href={`/minhas-indicacoes/${item.indicationId}`}>Ver indicação</Link></> : null}
+                    {item.sourceIndicationId ? ` · Origem: indicação #${item.sourceIndicationId}` : ""}
                   </span>
                 </span>
                 <span

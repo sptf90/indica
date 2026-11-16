@@ -116,6 +116,7 @@ try {
   assert(Array.isArray(notifications.items)); assert(Number.isFinite(notifications.unreadTotal));
   console.log('OK dados canônicos, notificações e chave do servidor protegida.');
 } catch (err) {
+  console.error(serverOutput);
   console.error(err); throw err;
 } finally {
   await browser?.close(); server?.kill('SIGTERM');

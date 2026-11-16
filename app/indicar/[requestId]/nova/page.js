@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import IndicationContactFields from "@/components/IndicationContactFields";
-import { validateIndicationContact, normalizeWhatsapp } from "@/lib/indication-contact";
+import { validateIndicationContact, normalizeWhatsapp, contactModeLabel, needsMaps, needsWhatsapp } from "@/lib/indication-contact";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import LocationPicker from "@/components/LocationPicker";
 import { api } from "@/lib/client-api";
@@ -23,6 +23,7 @@ export default function NovaIndicacaoPage() {
   const [description, setDescription] = useState("");
   const [links, setLinks] = useState([""]);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [contactName, setContactName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -52,7 +53,7 @@ export default function NovaIndicacaoPage() {
     setError("");
     if (!request?.acceptsIndications) { setError(request?.message || "Aguarde o carregamento do pedido."); return; }
     try {
-      validateIndicationContact(request.contactMode, { place: selectedPlace, whatsappNumber });
+      validateIndicationContact(request.contactMode, { place: selectedPlace, whatsappNumber, contactName });
     } catch (err) { setError(err.message); return; }
     if (!description.trim()) {
       setError("Descrição obrigatória.");
@@ -61,6 +62,12 @@ export default function NovaIndicacaoPage() {
     if (description.trim().length > 500) {
       setError("Descrição deve ter no máximo 500 caracteres.");
       return;
+    }
+    for (const link of cleanLinks()) {
+      try {
+        const url = new URL(link);
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error();
+      } catch { setError("Informe links válidos iniciados por http:// ou https://."); return; }
     }
     setStep("preview");
   }
@@ -77,6 +84,7 @@ export default function NovaIndicacaoPage() {
           links: cleanLinks(),
           place: buildPlacePayload(),
           whatsappNumber,
+          contactName,
         }),
       });
       setOk("Indicação enviada com sucesso");
@@ -93,7 +101,7 @@ export default function NovaIndicacaoPage() {
   }
 
   const tone = statusTone(request?.status);
-  const previewPlace = buildPlacePayload();
+  const previewPlace = needsMaps(request?.contactMode) || !request?.contactMode ? buildPlacePayload() : null;
 
   if (step === "preview") {
     return (
@@ -108,6 +116,7 @@ export default function NovaIndicacaoPage() {
           <aside className="indicar-n-context">
             <p className="indicar-n-context-kicker">Você está indicando para</p>
             <h2 className="indicar-n-context-title">{request.title}</h2>
+            <p>O solicitante deseja receber: <strong>{contactModeLabel(request.contactMode)}</strong>.</p>
             <p className="indicar-n-context-meta">
               <span className={`indicar-status indicar-status--${tone}`}>
                 {request.statusLabel}
@@ -126,7 +135,8 @@ export default function NovaIndicacaoPage() {
           </header>
           <div className="indicar-n-preview">
             <p>{description}</p>
-            {whatsappNumber ? <p>WhatsApp: +{normalizeWhatsapp(whatsappNumber)}</p> : null}
+            {request?.contactMode === "whatsapp" ? <p><strong>{contactName}</strong></p> : null}
+            {needsWhatsapp(request?.contactMode) && whatsappNumber ? <p><a href={`https://wa.me/${normalizeWhatsapp(whatsappNumber)}`} target="_blank" rel="noreferrer">WhatsApp: +{normalizeWhatsapp(whatsappNumber)}</a></p> : null}
             {cleanLinks().length ? (
               <ul className="indicar-n-preview-links">
                 {cleanLinks().map((url) => (
@@ -195,6 +205,7 @@ export default function NovaIndicacaoPage() {
         <aside className="indicar-n-context">
           <p className="indicar-n-context-kicker">Você está indicando para</p>
           <h2 className="indicar-n-context-title">{request.title}</h2>
+            <p>O solicitante deseja receber: <strong>{contactModeLabel(request.contactMode)}</strong>.</p>
           <p className="indicar-n-context-meta">
             <span className={`indicar-status indicar-status--${tone}`}>
               {request.statusLabel}
@@ -259,7 +270,7 @@ export default function NovaIndicacaoPage() {
             </button>
           </fieldset>
 
-          <IndicationContactFields mode={request?.contactMode} whatsappNumber={whatsappNumber}
+          <IndicationContactFields mode={request?.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}
             onWhatsappChange={setWhatsappNumber} place={selectedPlace} onPlaceChange={setSelectedPlace}
             cityName={request?.cityName} cityState={request?.cityState} />
 

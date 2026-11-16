@@ -47,7 +47,9 @@ export default function PontuacaoPage() {
   const reputationDisplay = `${reputationPct}%`;
   const validas = Number(user.validIndicationCount) || 0;
   const avaliadas = Number(user.selectedAndEvaluatedCount) || 0;
-  const pontos = Number(user.points ?? user.score ?? 0) || 0;
+  const equivalentes = Number(user.equivalentValidCount) || 0;
+  const reconhecidas = avaliadas + equivalentes;
+  const pontos = Number(user.accumulatedPoints) || 0;
 
   return (
     <main className="page page-pontuacao">
@@ -103,8 +105,7 @@ export default function PontuacaoPage() {
               {user.hasEvaluations
                 ? user.reputationLabel
                 : "Reputação 0/100 - Sem avaliações"}
-              . Percentual ao vivo das indicações válidas entre as selecionadas e
-              avaliadas.
+              . Percentual das indicações válidas entre as avaliações diretas e as validações por equivalência.
             </p>
           </div>
         </article>
@@ -123,6 +124,7 @@ export default function PontuacaoPage() {
           </span>
           <p className="pontuacao-card-label">Indicações válidas</p>
           <strong className="pontuacao-card-value">{validas}</strong>
+          <p className="muted">{user.chosenValidCount} escolhidas · {equivalentes} por equivalência</p>
           <p
             className="pontuacao-card-meta"
             title="Total de indicações avaliadas como válidas no histórico — não expiram."
@@ -144,7 +146,7 @@ export default function PontuacaoPage() {
           </span>
           <p className="pontuacao-card-label">Selecionadas e avaliadas</p>
           <strong className="pontuacao-card-value">{avaliadas}</strong>
-          <p className="pontuacao-card-meta">Denominador da reputação</p>
+          <p className="pontuacao-card-meta">Avaliações diretas; válidas por equivalência também entram no cálculo</p>
         </article>
 
         <article className="pontuacao-card">
@@ -167,7 +169,7 @@ export default function PontuacaoPage() {
             {pontos}
           </strong>
           <p className="pontuacao-card-meta">
-            Soma dos pontos nas inscrições ativas.{" "}
+            Pontos do histórico de contribuições, incluindo validações por equivalência.{" "}
             <Link href="/rankings">Ver rankings →</Link>
           </p>
         </article>
@@ -180,14 +182,14 @@ export default function PontuacaoPage() {
           <p>
             A porcentagem é{" "}
             <strong>
-              válidas ÷ selecionadas e avaliadas × 100
+              válidas ÷ (selecionadas e avaliadas + válidas por equivalência) × 100
             </strong>
             , arredondada. Sem avaliações, permanece 0% com o texto “Sem
             avaliações”.
           </p>
           <p className="pontuacao-formula" aria-hidden>
             {user.hasEvaluations
-              ? `${validas} ÷ ${avaliadas} × 100 → ${reputationDisplay}`
+              ? `${validas} ÷ ${reconhecidas} × 100 → ${reputationDisplay}`
               : "Sem avaliações → 0%"}
           </p>
         </article>
