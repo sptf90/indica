@@ -3,12 +3,12 @@
 Ao cadastrar ou editar uma indicação com localização:
 
 1. Abra “Selecionar no mapa”. O mapa inicia na cidade e UF do pedido ou no local já salvo.
-2. Digite o nome, por exemplo “Muffato”, e clique em “Buscar” ou pressione Enter.
+2. Digite pelo menos dois caracteres do nome ou endereço. A busca ocorre automaticamente após uma pausa de 450 ms na digitação.
 3. Os resultados aparecem numa lista e em marcadores numerados. Selecione pela lista ou pelo marcador; o mapa aproxima o estabelecimento e exibe nome, endereço e coordenadas.
-4. “Usar esta localização” confirma o candidato e preenche os campos automaticamente. “Cancelar” preserva a seleção anterior.
+4. “Usar esta localização” confirma o candidato e exibe o resumo do local. “Cancelar” preserva a seleção anterior.
 5. A prévia e os detalhes exibem o nome/endereço confirmados e links Google Maps/Waze para as coordenadas salvas.
 
-A marcação manual continua disponível com clique, teclado/ponto central, localização do dispositivo e zoom pela roda do mouse. Campos manuais editados enquanto o mapa está aberto são preservados. A pesquisa dentro do mapa é explícita; os campos de nome e endereço usam debounce, conforme descrito abaixo. Alterar o termo cancela a busca anterior e limpa seus marcadores.
+A marcação manual continua disponível com clique, teclado/ponto central, localização do dispositivo e zoom pela roda do mouse. O mapa concentra a entrada da localização. A pesquisa aguarda uma pausa na digitação e o término da composição de texto. Alterar o termo cancela a busca anterior e limpa seus marcadores.
 
 ## Configuração
 
@@ -47,10 +47,10 @@ O lint dos módulos novos/alterados da integração passa. O lint global mantém
 
 ## Busca por nome, endereço e mapa
 
-`PlaceLookupField` é reutilizado nos campos Nome do local e Endereço do local. Consulta `/api/places/search` após uma pausa de 450 ms a partir de três caracteres, ou por Enter/botão a partir de dois caracteres. A pesquisa é limitada a 200 caracteres e usa cidade/UF e os mesmos campos simples do catálogo. Selecionar uma sugestão preenche nome, endereço, Place ID e coordenadas. Alterações de texto e seleção cancelam consultas pendentes, evitando que uma resposta antiga substitua a seleção atual.
+`MapPlaceSearch` consulta `/api/places/search` automaticamente após uma pausa de 450 ms a partir de dois caracteres. O formulário não oferece campos separados de nome e endereço nem botão de busca. A pesquisa é limitada a 200 caracteres e usa cidade/UF e os mesmos campos simples do catálogo. Selecionar uma sugestão fornece nome, endereço, Place ID e coordenadas. Alterações de texto cancelam consultas pendentes, evitando que uma resposta antiga substitua a seleção atual.
 
 O mapa mantém seu campo de busca por nome ou endereço, lista de resultados e marcadores selecionáveis. Quando o provedor Google não está disponível, o campo informa a indisponibilidade e a marcação manual permanece disponível. Resultados Google não são desenhados sobre OpenStreetMap.
 
 O local exige pelo menos um dado: nome, endereço ou coordenadas confirmadas. Os outros dados podem permanecer vazios. A regra é compartilhada em `validatePlaceData`, usada no cliente e no servidor; criação e edição persistem também os locais parciais. Um local vazio ou coordenadas malformadas são rejeitados. Sem coordenadas, o link Google Maps usa o texto informado, sem inventar um destino Waze. Identificadores Google enviados pelo cliente continuam sendo resolvidos pelo servidor.
 
-As consultas reais precisam de `GOOGLE_PLACES_API_KEY` no servidor e `GOOGLE_MAPS_BROWSER_API_KEY` para a busca dentro do mapa Google. Sem essas configurações, o formulário continua permitindo texto e marcação manual. A integração de busca é testada com Google simulado, sem chamadas pagas.
+As consultas reais precisam de `GOOGLE_PLACES_API_KEY` no servidor e `GOOGLE_MAPS_BROWSER_API_KEY` para a busca dentro do mapa Google. Sem essas configurações, o formulário continua permitindo a marcação manual no mapa. A integração de busca é testada com Google simulado, sem chamadas pagas.

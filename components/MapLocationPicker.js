@@ -30,6 +30,7 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
   useEffect(() => { valueRef.current = value; }, [value]);
 
   const updateCandidate = useCallback(place => { candidateRef.current = place; setCandidate(place); }, []);
+  const showResults = useCallback(places => mapRef.current?.showResults(places), []);
   const chooseResult = useCallback(place => {
     const point = coordinatesOf(place);
     if (!point) return;
@@ -135,9 +136,9 @@ export default function MapLocationPicker({ value, onChange, cityName = "", city
       <h3 ref={headingRef} id={`${panelId}-title`} tabIndex={-1}>Selecione o local exato</h3>
       <p className="muted">Busque o estabelecimento ou marque um ponto no mapa e confirme a localização.{cityName ? ` O pedido é para ${cityName}${cityState ? ` (${cityState})` : ""}.` : ""}</p>
       <MapPlaceSearch key={`${cityName}:${cityState}:${attempt}:${manual}`} cityName={cityName} cityState={cityState}
-        disabled={!ready || !config?.placesConfigured} onResults={places => mapRef.current?.showResults(places)}
+        disabled={!ready || !config?.placesConfigured} onResults={showResults}
         onSelect={chooseResult} selectedId={candidate?.placeId} />
-      {ready && !config?.placesConfigured ? <p className="muted">A busca no mapa está indisponível. Você pode marcar o ponto manualmente ou buscar pelos campos de nome e endereço.</p> : null}
+      {ready && !config?.placesConfigured ? <p className="muted">A busca no mapa está indisponível. Você pode marcar o ponto manualmente.</p> : null}
       <div className="map-location-canvas-wrap" aria-busy={loading}>
         <div ref={canvasRef} className="map-location-canvas" aria-label="Mapa interativo para selecionar a localização" />
         {ready && !loading ? <span className="map-location-crosshair" aria-hidden="true">+</span> : null}
