@@ -18,7 +18,7 @@ colors:
   ok-bg: "#e9f9ef"
   info: "#2563eb"
   info-bg: "#e8f1ff"
-  warn: "#9a3412"
+  warn: "#9a3412" 
   bad: "#991b1b"
   gold: "#ca8a04"
   purple: "#7c3aed"
