@@ -17,6 +17,14 @@ export async function POST(_request, { params }) {
     if (!result.ok) return jsonError("Notificação não encontrada.", 404);
     return Response.json({ ok: true });
   } catch (error) {
-    return jsonError(error.message || "Erro", error.status || 500);
+    const status = error.status || 500;
+    if (status >= 500) {
+      console.error("[notifications:read]", {
+        code: error.code,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+    return jsonError(error.message || "Erro", status);
   }
 }

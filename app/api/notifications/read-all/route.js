@@ -25,6 +25,14 @@ export async function POST(request) {
     const result = await markAllNotificationsRead(user.id, category);
     return Response.json({ ok: true, ...result });
   } catch (error) {
-    return jsonError(error.message || "Erro", error.status || 500);
+    const status = error.status || 500;
+    if (status >= 500) {
+      console.error("[notifications:read-all]", {
+        code: error.code,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+    return jsonError(error.message || "Erro", status);
   }
 }
