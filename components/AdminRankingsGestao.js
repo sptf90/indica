@@ -112,6 +112,7 @@ export default function AdminRankingsGestao({ modality, title }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [notes, setNotes] = useState({});
   const [expandedId, setExpandedId] = useState(null);
 
@@ -237,6 +238,25 @@ export default function AdminRankingsGestao({ modality, title }) {
       setError(err.message);
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function removeRanking(item) {
+    const confirmed = window.confirm(
+      `Excluir o ranking de ${cityLabel(item)} (${formatPeriod(item.periodStart, item.periodEnd)})? Ele sairá das listas e deixará de receber inscrições e pontos.`
+    );
+    if (!confirmed) return;
+    setDeletingId(item.id);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api(`/api/admin/rankings/${item.id}`, { method: "DELETE" });
+      setRankings(previous => previous.filter(ranking => ranking.id !== item.id));
+      setSuccess(data.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -556,6 +576,14 @@ export default function AdminRankingsGestao({ modality, title }) {
                   >
                     Abrir
                   </Link>
+                  <button
+                    type="button"
+                    className="pill-outline admin-btn-bad"
+                    disabled={deletingId !== null}
+                    onClick={() => removeRanking(item)}
+                  >
+                    {deletingId === item.id ? "Excluindo…" : "Excluir"}
+                  </button>
                 </div>
               </li>
             ))}

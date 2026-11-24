@@ -3,6 +3,7 @@ import NavIcon from "@/components/NavIcon";
 import { adminDate } from "@/lib/admin-catalog";
 
 const activityLabels = {
+  admin_ranking_delete: "Ranking excluído",
   admin_user_update: "Cadastro de usuário alterado", admin_company_update: "Cadastro de empresa alterado",
   create: "Registro criado", evaluate_valid: "Indicação válida", equivalent_valid: "Validação por equivalência",
   evaluate_invalid: "Indicação não válida", select: "Indicação selecionada", close_voluntary: "Pedido encerrado", reopen: "Pedido reaberto",
