@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client-api";
 import { SponsorHero, SponsorSupportCard } from "@/components/RankingSponsor";
-import NavIcon from "@/components/NavIcon";
+import RankingDocument from "@/components/RankingDocument";
 
 function formatPeriodLabel(start, end, modality) {
   const s = start ? new Date(start) : null;
@@ -458,10 +458,8 @@ export default function RankingDetailPage() {
           </div>
 
           {ranking.sponsored || ranking.regulationText?.trim() ? (
-            <details className="rm-regulation">
-              <summary><NavIcon name="orders" /> Regulamento do ranking</summary>
-              <p>{ranking.regulationText?.trim() || "O regulamento ainda não foi disponibilizado."}</p>
-            </details>
+            <RankingDocument title="Regulamento do ranking" text={ranking.regulationText}
+              emptyText="O regulamento ainda não foi disponibilizado." />
           ) : null}
 
           {!started ? (
@@ -493,9 +491,7 @@ export default function RankingDetailPage() {
               <h2>Seu benefício</h2>
               {me.prizeBenefit ? <p>{me.prizeBenefit}</p> : null}
               {me.redemptionInstructions ? (
-                <p className="ranking-benefit-howto">
-                  {me.redemptionInstructions}
-                </p>
+                <RankingDocument title="Instruções de resgate" text={me.redemptionInstructions} />
               ) : null}
             </section>
           ) : null}

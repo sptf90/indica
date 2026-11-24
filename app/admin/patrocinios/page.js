@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminFrame } from "@/components/AdminWorkspace";
 import NavIcon from "@/components/NavIcon";
 import { SponsorHero, SponsorSupportCard } from "@/components/RankingSponsor";
+import RankingDocument from "@/components/RankingDocument";
 import { api } from "@/lib/client-api";
 
 const STATUS_FILTERS = [
@@ -65,12 +66,17 @@ function benefitSummary(item) {
   return text ? `${mode} — ${text}` : mode;
 }
 
-function redemptionSummary(item) {
+function redemptionDeadline(item) {
   const days = item.redemptionDeadlineDays;
-  const daysLabel =
-    days == null || days === "" ? "—" : `${days} dias`;
-  const instructions = item.prizeRedemptionInstructions?.trim();
-  return instructions ? `${daysLabel} · ${instructions}` : daysLabel;
+  return days ? `${days} ${Number(days) === 1 ? "dia" : "dias"}` : "—";
+}
+
+function formatPositions(positions) {
+  if (!positions?.length) return "—";
+  if (positions.length > 1 && positions.every((position, index) => position === index + 1)) {
+    return `1º ao ${positions.length}º lugar`;
+  }
+  return positions.map(position => `${position}º`).join(", ");
 }
 
 function RankingPreview({ item, positions }) {
@@ -102,7 +108,7 @@ function RankingPreview({ item, positions }) {
                 ))}
               </ul>
             ) : <p>{item.prizeBenefits?.default || "—"}</p>}
-            <p>Resgate: {redemptionSummary(item)}</p>
+            <p>Prazo de resgate: {redemptionDeadline(item)}</p>
             <p>A classificação aparece quando o período do ranking começa.</p>
           </section>
         </div>
@@ -275,9 +281,7 @@ export default function AdminPage() {
             {visible.map((item) => {
               const open = expandedId === item.id;
               const busy = busyId === item.id;
-              const positions = Array.isArray(item.prizePositions)
-                ? item.prizePositions.join(", ")
-                : "—";
+              const positions = formatPositions(item.prizePositions);
               const decide = canDecide(item.status);
               const activate = item.status === "approved";
 
@@ -328,17 +332,24 @@ export default function AdminPage() {
                   <dl className="admin-summary">
                     <div>
                       <dt>Posições</dt>
-                      <dd>Top: {positions || "—"}</dd>
+                      <dd>{positions}</dd>
                     </div>
                     <div>
                       <dt>Benefício</dt>
-                      <dd>{benefitSummary(item)}</dd>
+                      <dd className="admin-sponsorship-benefit">{benefitSummary(item)}</dd>
                     </div>
                     <div>
-                      <dt>Resgate</dt>
-                      <dd>{redemptionSummary(item)}</dd>
+                      <dt>Prazo de resgate</dt>
+                      <dd>{redemptionDeadline(item)}</dd>
                     </div>
                   </dl>
+
+                  {item.prizeRedemptionInstructions?.trim() && (
+                    <RankingDocument title="Instruções de resgate" text={item.prizeRedemptionInstructions} />
+                  )}
+                  {item.regulationText?.trim() && (
+                    <RankingDocument title="Regulamento do ranking" text={item.regulationText} />
+                  )}
 
                   {item.reviewNote ? (
                     <p className="admin-note-prev">Nota: {item.reviewNote}</p>
@@ -348,10 +359,6 @@ export default function AdminPage() {
                     <div className="admin-detail" id={`patrocinio-detalhes-${item.id}`}>
                       <RankingPreview item={item} positions={positions} />
                       <dl className="admin-dl">
-                        <div>
-                          <dt>Regulamento</dt>
-                          <dd>{item.regulationText || "—"}</dd>
-                        </div>
                         <div>
                           <dt>Ranking</dt>
                           <dd>
