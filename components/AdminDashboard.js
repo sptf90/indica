@@ -8,17 +8,25 @@ import { adminDate } from "@/lib/admin-catalog";
 
 export default function AdminDashboard() {
   const { data, loading, error, reload } = useAdminResource("/api/admin/overview");
+  const counts = data?.counts || {};
   return (
-    <AdminFrame title="Visão geral" description="Acompanhe a comunidade e o que precisa de atenção."
-      action={<button type="button" className="pill-outline" disabled={loading} onClick={reload}>{loading ? "Atualizando…" : "Atualizar dados"}</button>}>
+    <AdminFrame className="admin-overview" title="Visão geral"
+      description="Acompanhe a comunidade e revise as pendências da operação."
+      action={
+        <div className="admin-overview-actions">
+          <button type="button" className="pill-outline" disabled={loading} onClick={reload}>
+            {loading ? "Atualizando…" : "Atualizar dados"}
+          </button>
+          {data?.checkedAt && <p className="admin-updated-at">Atualizado em <time dateTime={data.checkedAt}>{adminDate(data.checkedAt)}</time></p>}
+        </div>
+      }>
       <AdminFeedback loading={loading} error={error} reload={reload} />
       {!loading && !error && data ? <>
-        <DashboardSummary counts={data.counts || {}} />
         <div className="admin-dashboard-content">
-          <DashboardTasks counts={data.counts || {}} />
+          <DashboardTasks counts={counts} />
           <RecentActivity items={data.recent} />
         </div>
-        <p className="admin-updated-at">Dados atualizados em <time dateTime={data.checkedAt}>{adminDate(data.checkedAt)}</time>.</p>
+        <DashboardSummary counts={counts} />
       </> : null}
     </AdminFrame>
   );

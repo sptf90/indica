@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -205,10 +206,9 @@ export default function MinhaIndicacaoDetailPage() {
     <main className="page page-indicacao-detail">
       <header className="ind-detail-head">
         <p className="ind-detail-kicker">Minha indicação</p>
-        <h1>{item.requestTitle}</h1>
-        <p className="lead">
+        <MobileHelp heading={<h1>{item.requestTitle}</h1>} className="lead" label="Ajuda para editar a indicação">
           {item.cityName} ({item.cityState}) · {item.statusLabel}
-        </p>
+        </MobileHelp>
         <p className="muted">
           Pedido: {item.requestStatusLabel}
           {" · "}Solicitante oculto

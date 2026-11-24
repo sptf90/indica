@@ -1,12 +1,14 @@
 "use client";
 
 import { CONTACT_MODES } from "@/lib/indication-contact";
+import MobileHelp from "@/components/MobileHelp";
 
 export default function ContactModePicker({ value, onChange, disabled = false }) {
   return (
     <fieldset className="contact-mode-picker" disabled={disabled}>
-      <legend>O que você quer receber?</legend>
-      <p className="muted">Quem indicar deverá informar os dados escolhidos abaixo.</p>
+      <MobileHelp as="legend" heading="O que você quer receber?" className="muted" label="Como funcionam os dados da indicação">
+        Quem indicar deverá informar os dados escolhidos abaixo. Se a indicação for confirmada como válida, quem indicou o mesmo local ou WhatsApp também pontua.
+      </MobileHelp>
       <div className="contact-mode-options">
         {CONTACT_MODES.map((mode) => (
           <label key={mode.value}>
@@ -16,7 +18,6 @@ export default function ContactModePicker({ value, onChange, disabled = false })
           </label>
         ))}
       </div>
-      <p className="muted">Se a indicação for confirmada como válida, quem indicou o mesmo local ou WhatsApp também pontua.</p>
     </fieldset>
   );
 }

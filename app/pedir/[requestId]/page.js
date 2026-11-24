@@ -1,5 +1,7 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
+
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -328,10 +330,9 @@ function PedidoDetailPage() {
           data-testid="pedido-chosen"
         >
           <div className="pedido-chosen-head">
-            <h2 id="chosen-heading">Escolhas e avaliações</h2>
-            <p className="pedido-cmp-lead">
+            <MobileHelp heading={<h2 id="chosen-heading">Escolhas e avaliações</h2>} className="pedido-cmp-lead" label="Sobre escolhas e avaliações">
               Indicações escolhidas e contribuições reconhecidas por equivalência, com o resultado da avaliação.
-            </p>
+            </MobileHelp>
           </div>
           <ul className="pedido-chosen-list">
             {chosenIndications.map((item) => {
@@ -430,12 +431,11 @@ function PedidoDetailPage() {
       {comparison ? (
         <section className="pedido-cmp" aria-labelledby="cmp-heading">
           <div className="pedido-cmp-head">
-            <h2 id="cmp-heading">Indicações anónimas</h2>
-            <p className="pedido-cmp-lead">
+            <MobileHelp heading={<h2 id="cmp-heading">Indicações anónimas</h2>} className="pedido-cmp-lead" label="Como as indicações são ordenadas">
               Ordenadas por confiança e pelo número de indicações válidas que
               cada pessoa tinha quando a comparação abriu. Identidade oculta
               até confirmar a escolha.
-            </p>
+            </MobileHelp>
           </div>
 
           <div className="pedido-cmp-list">

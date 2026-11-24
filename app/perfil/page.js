@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -251,16 +252,15 @@ export default function PerfilPage() {
                 data-testid="perfil-share-link"
                 data-tour="perfil-share"
               >
-                <p className="perfil-share-count">
+                <MobileHelp className="muted perfil-share-hint" label="Como funciona o link de compartilhamento" heading={<p className="perfil-share-count">
                   Acessos pelo meu link:{" "}
                   <strong data-testid="share-visit-count">
                     {Number(user.shareVisitCount) || 0}
                   </strong>
-                </p>
-                <p className="muted perfil-share-hint">
+                </p>}>
                   Pessoas distintas que entraram pelo teu link (desempate do
                   ranking).
-                </p>
+                </MobileHelp>
                 {user.sharePath || user.shareCode ? (
                   <div className="perfil-share-url-row">
                     <code className="perfil-share-url" data-testid="share-path">
@@ -290,11 +290,10 @@ export default function PerfilPage() {
           </div>
 
           <form className="perfil-edit-form" onSubmit={onSave}>
-            <h2>Editar dados</h2>
-            <p className="muted perfil-edit-lead">
+            <MobileHelp heading={<h2>Editar dados</h2>} className="muted perfil-edit-lead" label="Ajuda para editar seu perfil">
               Nome, foto e cidade. A cidade vira o padrão em “Fazer uma
               indicação”; pedidos antigos não mudam.
-            </p>
+            </MobileHelp>
 
             <label>
               Nome de usuário

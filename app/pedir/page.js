@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -123,13 +124,17 @@ export default function PedirPage() {
       <section className="pedir-hero reveal">
         <div className="pedir-hero-copy">
           <p className="pedir-kicker">Novo pedido</p>
-          <h1 className="pedir-title">
-            Conta o que você procura — <span>a galera indica</span>
-          </h1>
-          <p className="pedir-lead">
+          <MobileHelp
+            className="pedir-lead" label="Como montar um pedido"
+            heading={
+              <h1 className="pedir-title">
+                Conta o que você procura — <span>a galera indica</span>
+              </h1>
+            }
+          >
             Diga o que procura, a cidade e como quer receber a indicação. Detalhes ajudam a receber
             indicações mais certeiras.
-          </p>
+          </MobileHelp>
           <ul className="pedir-tips" aria-label="Dicas rápidas">
             {TIPS.map((tip) => (
               <li key={tip} className="pedir-chip">
@@ -160,23 +165,23 @@ export default function PedirPage() {
         </header>
 
         <form className="pedir-form" onSubmit={goPreview}>
-          <label className="pedir-field">
-            <span className="pedir-label">
-              Título
-              <span className="pedir-req">obrigatório</span>
-            </span>
+          <div className="pedir-field">
+            <MobileHelp
+              heading={<label className="pedir-label" htmlFor="pedido-titulo">Título <span className="pedir-req">obrigatório</span></label>}
+              className="pedir-field-hint" label="Exemplo de título"
+            >
+              Seja específico. Exemplo: Dentista infantil perto do centro.
+            </MobileHelp>
             <input
+              id="pedido-titulo"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               required
-              placeholder="Ex.: Dentista infantil perto do centro"
               autoComplete="off"
             />
-            <span className="pedir-field-hint">
-              {title.length}/200 · quanto mais específico, melhor
-            </span>
-          </label>
+            <span className="pedir-field-hint">{title.length}/200</span>
+          </div>
 
           <div className="pedir-field">
             <span className="pedir-label">

@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client-api";
@@ -145,11 +146,10 @@ export default function EmpresaResgatesPage() {
       <section className="emp-hero emp-hero-compact reveal" data-tour="emp-hero">
         <div className="emp-hero-main">
           <p className="eyebrow">Área da empresa</p>
-          <h1>Resgates</h1>
-          <p className="lead emp-hero-lead">
+          <MobileHelp heading={<h1>Resgates</h1>} className="lead emp-hero-lead" label="Como consultar os resgates">
             Confirme benefícios dos ganhadores da sua campanha — fora do fluxo
             de patrocínio.
-          </p>
+          </MobileHelp>
         </div>
         <div className="emp-hero-meta">
           <div className="emp-hero-stats">

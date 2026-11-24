@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -101,10 +102,9 @@ export default function PedirPreviewPage() {
 
       <header className="page-previa-head">
         <p className="eyebrow">Prévia</p>
-        <h1 className="page-previa-title">Prévia do pedido</h1>
-        <p className="page-previa-lead">
+        <MobileHelp heading={<h1 className="page-previa-title">Prévia do pedido</h1>} className="page-previa-lead" label="O que conferir na prévia">
           Confira os dados antes de publicar. Ainda dá para voltar e editar.
-        </p>
+        </MobileHelp>
       </header>
 
       <section className="page-previa-card" aria-labelledby="previa-card-title">

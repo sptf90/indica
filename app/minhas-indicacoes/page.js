@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -53,14 +54,18 @@ export default function MinhasIndicacoesPage() {
       <section className="flow-hero reveal">
         <div className="flow-hero-copy">
           <p className="flow-kicker">Minhas indicações</p>
-          <h1 className="flow-title">
-            Suas indicações,{" "}
-            <span>do mais recente</span>
-          </h1>
-          <p className="flow-lead">
+          <MobileHelp
+            className="flow-lead" label="Ajuda sobre minhas indicações"
+            heading={
+              <h1 className="flow-title">
+                Suas indicações,{" "}
+                <span>do mais recente</span>
+              </h1>
+            }
+          >
             Acompanhe o status das indicações que você enviou e abra o detalhe
             quando quiser revisar.
-          </p>
+          </MobileHelp>
           <ul className="flow-tips" aria-label="Dicas rápidas">
             {TIPS.map((tip) => (
               <li key={tip} className="flow-chip">

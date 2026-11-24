@@ -2,10 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminFrame } from "@/components/AdminWorkspace";
+import NavIcon from "@/components/NavIcon";
+import { SponsorHero, SponsorSupportCard } from "@/components/RankingSponsor";
 import { api } from "@/lib/client-api";
 
 const STATUS_FILTERS = [
   { value: "all", label: "Todas" },
+  { value: "pending", label: "Aguardam revisão" },
   { value: "submitted", label: "Enviada" },
   { value: "under_review", label: "Em análise" },
   { value: "awaiting_correction", label: "Correção" },
@@ -54,10 +58,6 @@ function canDecide(status) {
   return ["submitted", "under_review", "awaiting_correction"].includes(status);
 }
 
-function canActivate(status) {
-  return canDecide(status) || status === "approved";
-}
-
 function benefitSummary(item) {
   const mode =
     item.prizeBenefitMode === "per_position" ? "Distinto por posição" : "Igual";
@@ -71,6 +71,45 @@ function redemptionSummary(item) {
     days == null || days === "" ? "—" : `${days} dias`;
   const instructions = item.prizeRedemptionInstructions?.trim();
   return instructions ? `${daysLabel} · ${instructions}` : daysLabel;
+}
+
+function RankingPreview({ item, positions }) {
+  const ranking = {
+    sponsored: true,
+    modality: item.modality,
+    sponsorName: item.displayName,
+    sponsorBannerUrl: item.bannerUrl,
+    sponsorLogoUrl: item.logoUrl,
+    sponsorSiteUrl: item.siteUrl,
+  };
+  return (
+    <section className="admin-ranking-preview" aria-label="Prévia do ranking">
+      <div className="rm-layout">
+        <div className="rm-main">
+          <SponsorHero ranking={ranking} preview />
+          <div className="rm-meta-bar">
+            <span className="ranking-status-badge ranking-status-badge--info">Prévia</span>
+            <span>{item.modalityLabel}</span>
+            <span>{formatPeriod(item.periodStart, item.periodEnd)}</span>
+          </div>
+          <section className="rm-preview-note">
+            <h2>Premiação</h2>
+            <p>Posições premiadas: {positions || "—"}</p>
+            {item.prizeBenefitMode === "per_position" && item.prizePositions?.length ? (
+              <ul>
+                {item.prizePositions.map(position => (
+                  <li key={position}>{position}º lugar · {item.prizeBenefits?.[position] || item.prizeBenefits?.default || "—"}</li>
+                ))}
+              </ul>
+            ) : <p>{item.prizeBenefits?.default || "—"}</p>}
+            <p>Resgate: {redemptionSummary(item)}</p>
+            <p>A classificação aparece quando o período do ranking começa.</p>
+          </section>
+        </div>
+        <SponsorSupportCard ranking={ranking} />
+      </div>
+    </section>
+  );
 }
 
 export default function AdminPage() {
@@ -143,6 +182,7 @@ export default function AdminPage() {
   const counts = useMemo(() => {
     const base = {
       all: items.length,
+      pending: 0,
       submitted: 0,
       under_review: 0,
       awaiting_correction: 0,
@@ -151,12 +191,14 @@ export default function AdminPage() {
     };
     for (const item of items) {
       if (base[item.status] != null) base[item.status] += 1;
+      if (canDecide(item.status)) base.pending += 1;
     }
     return base;
   }, [items]);
 
   const visible = useMemo(() => {
-    if (filter === "all") return items;
+    if (filter === "all") return [...items].sort((a, b) => Number(canDecide(b.status)) - Number(canDecide(a.status)));
+    if (filter === "pending") return items.filter((item) => canDecide(item.status));
     return items.filter((item) => item.status === filter);
   }, [items, filter]);
 
@@ -189,22 +231,15 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="page page-admin">
-      <section className="admin-hero">
-        <div className="admin-hero-main">
-          <p className="eyebrow">Admin · Patrocínio</p>
-          <h1>Solicitações de patrocínio</h1>
-          <p className="lead admin-lead">
-            Analisar, aprovar, rejeitar ou activar campanhas no ranking. Sem
-            cobrança nem moderação geral.
-          </p>
-        </div>
-        <div className="admin-hero-meta">
-          <span className="admin-count-badge">
-            <strong>{items.length}</strong> no total
-          </span>
-        </div>
-      </section>
+    <AdminFrame className="admin-sponsorships" title="Solicitações de patrocínio"
+      description="Revise as propostas de empresas para os rankings semanais e mensais."
+      action={
+        <button type="button" className="admin-sponsorship-queue" aria-pressed={filter === "pending"}
+          onClick={() => setFilter(filter === "pending" ? "all" : "pending")}>
+          <span className="admin-overview-icon"><NavIcon name="rank" /></span>
+          <span><strong>{counts.pending}</strong> {counts.pending === 1 ? "aguarda revisão" : "aguardam revisão"}</span>
+        </button>
+      }>
 
       {error ? (
         <p className="form-error" role="alert">
@@ -217,13 +252,12 @@ export default function AdminPage() {
         </p>
       ) : null}
 
-      <div className="admin-filters" role="tablist" aria-label="Filtrar por estado">
+      <div className="admin-filters" role="group" aria-label="Filtrar por status">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
-            role="tab"
-            aria-selected={filter === f.value}
+            aria-pressed={filter === f.value}
             className={`admin-filter${filter === f.value ? " is-active" : ""}`}
             onClick={() => setFilter(f.value)}
           >
@@ -245,16 +279,16 @@ export default function AdminPage() {
                 ? item.prizePositions.join(", ")
                 : "—";
               const decide = canDecide(item.status);
-              const activate = canActivate(item.status);
+              const activate = item.status === "approved";
 
               return (
                 <li
                   key={item.id}
-                  className={`admin-card${open ? " is-open" : ""}`}
+                  className={`admin-card${open ? " is-open" : ""}${decide ? " is-pending" : ""}`}
                 >
                   <header className="admin-card-head">
                     <div className="admin-card-title">
-                      <strong>{item.displayName}</strong>
+                      <h2>{item.displayName}</h2>
                       <span className={statusClass(item.status)}>
                         {item.statusLabel}
                       </span>
@@ -266,18 +300,15 @@ export default function AdminPage() {
                     <span className="admin-meta-sep" aria-hidden>
                       ·
                     </span>
-                    <span>{item.companyLegalName || "Empresa"}</span>
+                    {item.companyLegalName && item.companyLegalName !== item.displayName && (
+                      <><span>{item.companyLegalName}</span><span className="admin-meta-sep" aria-hidden>·</span></>
+                    )}
                     {item.companyCnpjFormatted ? (
                       <>
-                        <span className="admin-meta-sep" aria-hidden>
-                          ·
-                        </span>
                         <span>{item.companyCnpjFormatted}</span>
+                        <span className="admin-meta-sep" aria-hidden>·</span>
                       </>
                     ) : null}
-                    <span className="admin-meta-sep" aria-hidden>
-                      ·
-                    </span>
                     <span>
                       {item.cityName || "—"}
                       {item.cityState ? `/${item.cityState}` : ""}
@@ -314,7 +345,8 @@ export default function AdminPage() {
                   ) : null}
 
                   {open ? (
-                    <div className="admin-detail">
+                    <div className="admin-detail" id={`patrocinio-detalhes-${item.id}`}>
+                      <RankingPreview item={item} positions={positions} />
                       <dl className="admin-dl">
                         <div>
                           <dt>Regulamento</dt>
@@ -332,7 +364,7 @@ export default function AdminPage() {
 
                   {(decide || activate) && (
                     <label className="admin-note-field">
-                      Motivo / nota (opcional)
+                      Nota da revisão (opcional)
                       <input
                         value={notes[item.id] || ""}
                         onChange={(e) =>
@@ -350,16 +382,18 @@ export default function AdminPage() {
                   <div className="admin-card-actions">
                     <button
                       type="button"
-                      className="ghost-link admin-btn-ghost"
+                      className="pill-outline admin-sponsorship-details"
+                      aria-expanded={open}
+                      aria-controls={open ? `patrocinio-detalhes-${item.id}` : undefined}
                       onClick={() => setExpandedId(open ? null : item.id)}
                     >
-                      {open ? "Fechar" : "Detalhe"}
+                      {open ? "Fechar prévia" : "Prévia do ranking"}
                     </button>
                     {decide ? (
                       <button
                         type="button"
-                        className="ghost-link admin-btn-bad"
-                        disabled={busy}
+                        className="pill-outline admin-sponsorship-reject"
+                        disabled={busyId !== null}
                         onClick={() => runAction(item.id, "reject")}
                       >
                         Rejeitar
@@ -368,21 +402,21 @@ export default function AdminPage() {
                     {activate ? (
                       <button
                         type="button"
-                        className="pill-outline admin-btn-secondary"
-                        disabled={busy}
+                        className="pill-outline"
+                        disabled={busyId !== null}
                         onClick={() => runAction(item.id, "activate")}
                       >
-                        Activar
+                        {busy ? "Salvando…" : item.rankingId ? "Reaplicar ao ranking" : "Ativar no ranking"}
                       </button>
                     ) : null}
                     {decide ? (
                       <button
                         type="button"
-                        className="pill-cta admin-btn-primary"
-                        disabled={busy}
+                        className="pill-cta"
+                        disabled={busyId !== null}
                         onClick={() => runAction(item.id, "approve")}
                       >
-                        Aprovar
+                        {busy ? "Salvando…" : "Aprovar e ativar"}
                       </button>
                     ) : null}
                   </div>
@@ -392,6 +426,6 @@ export default function AdminPage() {
           </ul>
         )}
       </section>
-    </main>
+    </AdminFrame>
   );
 }

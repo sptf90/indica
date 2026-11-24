@@ -1,4 +1,5 @@
 import { getPool } from "@/lib/db";
+import { ensureCity } from "@/lib/cities";
 import {
   hashPassword,
   jsonError,
@@ -28,6 +29,9 @@ export async function POST(request) {
   }
 
   const sessionUser = await getCurrentUser();
+  if (sessionUser && body.createNew === true) {
+    return jsonError("Saia da conta atual para cadastrar uma nova empresa.", 409);
+  }
   if (sessionUser && isRealAdminAccount(sessionUser)) {
     return jsonError(
       "Administradores usam a prévia de empresa em /admin, sem converter a conta.",
@@ -41,7 +45,9 @@ export async function POST(request) {
   const password = String(body.password || "");
   const legalName = String(body.legalName || "").trim();
   const logoUrl = String(body.logoUrl || "").trim() || null;
-  const cityId = Number(body.cityId);
+  let cityId = Number(body.cityId);
+  const cityName = String(body.cityName || "").trim();
+  const state = String(body.state || "").trim().toUpperCase();
   const cnpj = normalizeCnpj(body.cnpj);
 
   const errors = validateCompanyRegisterInput({
@@ -50,33 +56,41 @@ export async function POST(request) {
     cnpj,
     legalName,
     cityId,
+    cityName,
+    state,
     convertExisting: converting,
   });
   if (errors.length) return jsonError(errors[0], 400, { errors });
   if (logoUrl && logoUrl.length > 500) {
     return jsonError("URL do logotipo deve ter no máximo 500 caracteres.");
   }
+  if (body.createNew === true && logoUrl && (!/^https?:\/\//i.test(logoUrl) || !URL.canParse(logoUrl))) {
+    return jsonError("Informe um link de imagem que comece com http:// ou https://.");
+  }
   if (!validateCnpj(cnpj)) {
     return jsonError("CNPJ inválido.");
-  }
-
-  const pool = getPool();
-  const [cityRows] = await pool.query(
-    `SELECT id, nome, estado FROM cidades WHERE id = ? LIMIT 1`,
-    [cityId]
-  );
-  if (!cityRows[0]) {
-    return jsonError("Cidade inválida.");
   }
 
   if (sessionUser && isCompanyAccount(sessionUser)) {
     return jsonError("Esta conta já é empresarial.", 409);
   }
 
-  const conn = await pool.getConnection();
+  const conn = await getPool().getConnection();
 
   try {
     await conn.beginTransaction();
+
+    if (cityName && state) {
+      cityId = await ensureCity(conn, { name: cityName, state });
+    }
+    const [[city]] = await conn.query(
+      `SELECT nome, estado FROM cidades WHERE id = ? LIMIT 1`,
+      [cityId]
+    );
+    if (!city) {
+      await conn.rollback();
+      return jsonError("Cidade inválida.");
+    }
 
     let userId;
     let company;
@@ -117,8 +131,8 @@ export async function POST(request) {
         legalName,
         logoUrl,
         cityId,
-        cityName: cityRows[0].name,
-        cityState: cityRows[0].state,
+        cityName: city.name,
+        cityState: city.state,
       };
     }
 
@@ -128,16 +142,7 @@ export async function POST(request) {
     return Response.json(
       {
         user: publicUser(user),
-        company: converting
-          ? company
-          : {
-              cnpj,
-              legalName,
-              logoUrl,
-              cityId,
-              cityName: cityRows[0].name,
-              cityState: cityRows[0].state,
-            },
+        company,
         converted: converting,
       },
       { status: converting ? 200 : 201 }

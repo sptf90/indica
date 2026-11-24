@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,14 +51,18 @@ export default function MeusPedidosPage() {
       <section className="meus-hero reveal">
         <div className="meus-hero-copy">
           <p className="meus-kicker">Meus pedidos</p>
-          <h1 className="meus-title">
-            Seus pedidos,{" "}
-            <span>do mais recente</span>
-          </h1>
-          <p className="meus-lead">
+          <MobileHelp
+            className="meus-lead" label="Ajuda sobre meus pedidos"
+            heading={
+              <h1 className="meus-title">
+                Seus pedidos,{" "}
+                <span>do mais recente</span>
+              </h1>
+            }
+          >
             Acompanhe status, cidade e abra o detalhe quando quiser ver as
             indicações.
-          </p>
+          </MobileHelp>
           <ul className="meus-tips" aria-label="Dicas rápidas">
             {TIPS.map((tip) => (
               <li key={tip} className="meus-chip">

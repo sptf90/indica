@@ -1,10 +1,12 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/client-api";
+import NavIcon from "@/components/NavIcon";
 
 /** Sem preferência explícita na URL → Minha cidade. */
 function filterFromSearchParams(searchParams) {
@@ -322,15 +324,6 @@ function RankingsPageContent() {
     ? `${myCity.name}${myCity.state ? `/${myCity.state}` : ""}`
     : null;
 
-  const phaseHint =
-    phase === "ativos"
-      ? "Só rankings ativos (em andamento)"
-      : phase === "premios"
-        ? "Em apuração ou finalizados com prêmios a acompanhar"
-        : phase === "finalizados"
-          ? "Rankings com classificação final publicada"
-          : "Todas as fases: ativos, aguardando prêmios e finalizados";
-
   const sections = [
     { key: "open", title: "Ativos", list: openItems },
     {
@@ -367,25 +360,36 @@ function RankingsPageContent() {
   });
 
   return (
-    <main className="page page-rankings">
+    <main className="page page-rankings rankings-directory">
       <header className="rankings-head">
         <div>
-          <p className="rankings-kicker">
-            {companyScope ? "Área da empresa" : "Rankings"}
-          </p>
-          <h1>
-            {companyScope ? "Seu ranking patrocinado" : "Classificações"}
-          </h1>
-          <p className="rankings-lead">
+          <MobileHelp
+            className="rankings-lead" label="Como funcionam os rankings"
+            heading={
+              <h1>
+                {companyScope ? "Seu ranking patrocinado" : "Rankings"}
+              </h1>
+            }
+          >
             {companyScope
-              ? "Só a campanha da sua empresa aparece aqui — sem Café Demo nem outros patrocinadores. Gestão de solicitação e resgates fica em Patrocínio e resgates."
-              : "Sua cidade primeiro; mensal e semanal ativos no topo. Filtre por fase: ativos, aguardando prêmios ou finalizados. Inscrição manual e definitiva (até 2 semanais e 1 mensal). Futuros ficam ocultos até o início do período."}
-          </p>
+              ? "Acompanhe a classificação e os prêmios da sua campanha."
+              : "Acompanhe as classificações e participe dos rankings da sua cidade."}
+          </MobileHelp>
+          {!companyScope && limits ? (
+            <p className="rankings-limits">
+              <span className="rankings-limits-label">Minhas inscrições</span>
+              Semanais {limits.weekly.used}/{limits.weekly.max} · Mensal{" "}
+              {limits.monthly.used}/{limits.monthly.max}
+            </p>
+          ) : null}
         </div>
         {!companyScope ? (
           <div className="rankings-points" aria-label="Pontos acumulados">
-            <span className="rankings-points-label">Pontos acumulados</span>
-            <strong>{points}</strong>
+            <span className="rankings-points-icon"><NavIcon name="score" /></span>
+            <div>
+              <span className="rankings-points-label">Pontos acumulados</span>
+              <strong>{points.toLocaleString("pt-BR")}</strong>
+            </div>
           </div>
         ) : (
           <Link href="/empresa" className="btn-outline sm">
@@ -396,17 +400,9 @@ function RankingsPageContent() {
 
       {!companyScope ? (
         <div className="rankings-toolbar">
-          {limits ? (
-            <p className="rankings-limits">
-              <span className="rankings-limits-label">Suas inscrições</span>
-              Semanais {limits.weekly.used}/{limits.weekly.max} · Mensal{" "}
-              {limits.monthly.used}/{limits.monthly.max}
-            </p>
-          ) : null}
-
           <div className="rankings-filter-block">
             <span className="rankings-filter-label" id="rankings-filter-label">
-              Filtrar por
+              Cidade
             </span>
             <div
               className="rankings-filters"
@@ -487,13 +483,12 @@ function RankingsPageContent() {
                 Finalizados
               </button>
             </div>
-            <p className="rankings-filter-hint">{phaseHint}</p>
           </div>
         </div>
       ) : null}
 
-      {flash ? <p className="ok-box">{flash}</p> : null}
-      {error ? <p className="error-box">{error}</p> : null}
+      {flash ? <p className="ok-box" role="status">{flash}</p> : null}
+      {error ? <p className="error-box" role="alert">{error}</p> : null}
 
       {!error && items.length === 0 ? (
         <p className="muted rankings-empty">
@@ -517,10 +512,10 @@ function RankingsPageContent() {
             aria-labelledby={`rankings-sec-${section.key}`}
           >
             <div className="rankings-section-head">
-              <h2 id={`rankings-sec-${section.key}`}>{section.title}</h2>
               {section.hint ? (
-                <p className="rankings-section-hint">{section.hint}</p>
-              ) : null}
+                <MobileHelp heading={<h2 id={`rankings-sec-${section.key}`}>{section.title}</h2>}
+                  className="rankings-section-hint" label="Sobre esta fase do ranking">{section.hint}</MobileHelp>
+              ) : <h2 id={`rankings-sec-${section.key}`}>{section.title}</h2>}
             </div>
             <ul className="rankings-list">
               {section.list.map((r) => (

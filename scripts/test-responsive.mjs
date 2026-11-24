@@ -111,7 +111,7 @@ try {
         await measure(page, 'admin-edicao-com-permissao');
       }
       if (scenario.path === '/admin/patrocinios') {
-        await page.getByRole('button', { name: 'Detalhe', exact: true }).first().click();
+        await page.getByRole('button', { name: 'Prévia do ranking', exact: true }).first().click();
         await measure(page, 'admin-patrocinio-expandido');
       }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -923,12 +924,11 @@ export default function EmpresaPage() {
         <section className="emp-hero emp-hero-register reveal">
           <div>
             <p className="eyebrow">Conta empresarial</p>
-            <h1>{converting ? "Virar conta empresarial" : "Cadastro por CNPJ"}</h1>
-            <p className="lead emp-hero-lead">
+            <MobileHelp heading={<h1>{converting ? "Virar conta empresarial" : "Cadastro por CNPJ"}</h1>} className="lead emp-hero-lead" label="Ajuda sobre a área da empresa">
               {converting
                 ? `Sua conta @${user.username} deixa de ser pessoa e passa a ser empresa — mesmo login e senha. Só patrocínio e resgates.`
                 : "Só para patrocinar rankings e confirmar resgates. Sem perfil público, sem catálogo e sem pedir ou indicar."}
-            </p>
+            </MobileHelp>
           </div>
         </section>
 
@@ -1078,10 +1078,9 @@ export default function EmpresaPage() {
       <section className="emp-hero emp-hero-compact reveal" data-tour="emp-hero">
         <div className="emp-hero-main">
           <p className="eyebrow">Área da empresa</p>
-          <h1>{company?.legalName || "Empresa"}</h1>
-          <p className="lead emp-hero-lead">
+          <MobileHelp heading={<h1>{company?.legalName || "Empresa"}</h1>} className="lead emp-hero-lead" label="Ajuda sobre a área da empresa">
             Patrocínio e resgates — sem pedir nem indicar.
-          </p>
+          </MobileHelp>
         </div>
         <div className="emp-hero-meta">
           <span className="emp-cnpj-badge" title="CNPJ">
@@ -1558,18 +1557,17 @@ export default function EmpresaPage() {
 
                   {benefitMode === "per_position" && useCompactDistinct ? (
                     <div className="emp-field emp-benefit-by-pos">
-                      <p className="hint emp-benefit-scale-note">
+                      <MobileHelp heading={<label htmlFor="beneficio-padrao">Benefício padrão</label>}
+                        className="hint emp-benefit-scale-note" label="Como definir os benefícios">
                         Top {prizePositions.length}: texto padrão + overrides.
-                      </p>
-                      <label className="emp-field">
-                        Benefício padrão
-                        <input
-                          value={benefitDefault}
-                          onChange={(e) => setBenefitDefault(e.target.value)}
-                          placeholder="Ex.: voucher de R$ 50"
-                          required
-                        />
-                      </label>
+                      </MobileHelp>
+                      <input
+                        id="beneficio-padrao"
+                        value={benefitDefault}
+                        onChange={(e) => setBenefitDefault(e.target.value)}
+                        placeholder="Ex.: voucher de R$ 50"
+                        required
+                      />
                       <div className="emp-override-add">
                         <label className="emp-field emp-field-narrow">
                           Override posição

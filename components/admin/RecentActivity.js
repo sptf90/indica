@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NavIcon from "@/components/NavIcon";
 import { adminDate } from "@/lib/admin-catalog";
 
 const activityLabels = {
@@ -24,7 +25,12 @@ export default function RecentActivity({ items = [] }) {
             </li>
           ))}
         </ol>
-      ) : <p className="admin-section-caption">As operações administrativas aparecerão aqui. O histórico completo fica na auditoria.</p>}
+      ) : (
+        <div className="admin-task-empty">
+          <span className="admin-overview-icon"><NavIcon name="orders" /></span>
+          <strong>Nenhuma atividade registrada</strong>
+        </div>
+      )}
     </section>
   );
 }

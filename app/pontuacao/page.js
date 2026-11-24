@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,14 +57,18 @@ export default function PontuacaoPage() {
       <section className="pontuacao-hero reveal">
         <div className="pontuacao-hero-copy">
           <p className="pontuacao-kicker">Pontuação e credibilidade</p>
-          <h1 className="pontuacao-title">
-            Sua confiança{" "}
-            <span>em números</span>
-          </h1>
-          <p className="pontuacao-lead">
+          <MobileHelp
+            className="pontuacao-lead" label="Como funciona a pontuação"
+            heading={
+              <h1 className="pontuacao-title">
+                Sua confiança{" "}
+                <span>em números</span>
+              </h1>
+            }
+          >
             Acompanhe reputação, indicações válidas e o histórico privado.
             Pontos acumulados somam os saldos das suas inscrições ativas.
-          </p>
+          </MobileHelp>
           <ul className="pontuacao-tips" aria-label="Dicas rápidas">
             {TIPS.map((tip) => (
               <li key={tip} className="pontuacao-chip">

@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,10 +31,10 @@ export function useAdminResource(url) {
   }, [url, version, router]);
   return { ...state, reload: useCallback(() => setVersion(v => v + 1), []) };
 }
-export function AdminFrame({ title, description, children, back, action }) {
-  return <main className="page page-admin admin-console">
+export function AdminFrame({ title, description, children, back, action, className = "" }) {
+  return <main className={`page page-admin admin-console ${className}`.trimEnd()}>
     <nav className="admin-breadcrumb" aria-label="Navegação da gestão"><Link href="/admin">Admin</Link>{back ? <><span aria-hidden="true">/</span><Link href={back.href}>{back.title}</Link></> : null}<span aria-hidden="true">/</span><span>{title}</span></nav>
-    <header className="admin-hero admin-hero-compact"><div className="admin-hero-main"><h1>{title}</h1><p className="lead admin-lead">{description}</p></div>{action}</header>
+    <header className="admin-hero admin-hero-compact"><div className="admin-hero-main"><MobileHelp heading={<h1>{title}</h1>} className="lead admin-lead" label="Sobre esta tela">{description}</MobileHelp></div>{action}</header>
     {children}
   </main>;
 }

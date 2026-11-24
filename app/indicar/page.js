@@ -1,5 +1,6 @@
 "use client";
 
+import MobileHelp from "@/components/MobileHelp";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -125,13 +126,17 @@ export default function IndicarListaPage() {
       <section className="indicar-hero reveal">
         <div className="indicar-hero-copy">
           <p className="indicar-kicker">Fazer uma indicação</p>
-          <h1 className="indicar-title">
-            Tem pedido aberto? <span>indica aí</span>
-          </h1>
-          <p className="indicar-lead">
+          <MobileHelp
+            className="indicar-lead" label="Como encontrar pedidos para indicar"
+            heading={
+              <h1 className="indicar-title">
+                Tem pedido aberto? <span>indica aí</span>
+              </h1>
+            }
+          >
             Escolha a cidade, veja o que a galera procura e manda sua dica.
             Trocar o filtro não altera seu perfil.
-          </p>
+          </MobileHelp>
           <ul className="indicar-tips" aria-label="Dicas rápidas">
             {TIPS.map((tip) => (
               <li key={tip} className="indicar-chip">
