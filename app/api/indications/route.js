@@ -22,6 +22,7 @@ export async function GET(request) {
       cityId: searchParams.get("cityId"),
       cursor: searchParams.get("cursor"),
       limit: searchParams.get("limit"),
+      hidden: scope === "hidden",
     });
     return Response.json(data);
   } catch (error) {

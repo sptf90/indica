@@ -4846,6 +4846,42 @@ main.page.page-indicar {
   transform: translateX(2px);
 }
 
+.request-visibility-filter,
+.request-visibility-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+}
+
+.request-visibility-filter { margin-block: 0.75rem; }
+.request-visibility-filter button,
+.request-visibility-button {
+  min-height: 2.2rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--type-meta);
+  font-weight: 650;
+  cursor: pointer;
+}
+.request-visibility-filter button[aria-pressed="true"],
+.request-visibility-button:hover:not(:disabled) {
+  border-color: var(--brand-mid);
+  background: var(--brand-soft);
+}
+.request-visibility-filter button:disabled,
+.request-visibility-button:disabled { opacity: 0.6; cursor: default; }
+.indicar-card-title a { color: inherit; }
+
+@media (max-width: 720px) {
+  .activity-row--dismissible { grid-template-columns: minmax(0, 1fr); }
+  .activity-row--dismissible .request-visibility-button { justify-self: end; }
+}
+
 .indicar-empty {
   display: flex;
   flex-direction: column;

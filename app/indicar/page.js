@@ -44,13 +44,16 @@ export default function IndicarListaPage() {
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [booting, setBooting] = useState(true);
+  const [showHidden, setShowHidden] = useState(false);
+  const [updatingId, setUpdatingId] = useState(null);
 
-  async function load(cid, cursor = null, append = false) {
+  async function load(cid, cursor = null, append = false, hidden = showHidden) {
     setLoading(true);
     setError("");
     try {
       const qs = new URLSearchParams({ cityId: String(cid) });
       if (cursor) qs.set("cursor", String(cursor));
+      if (hidden) qs.set("scope", "hidden");
       const data = await api(`/api/indications?${qs.toString()}`);
       setItems((prev) =>
         append ? [...prev, ...(data.items || [])] : data.items || []
@@ -62,6 +65,28 @@ export default function IndicarListaPage() {
       else setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function changeVisibilityFilter(hidden) {
+    if (hidden === showHidden) return;
+    setShowHidden(hidden);
+    setItems([]);
+    setNextCursor(null);
+    setEmptyMessage("");
+    if (cityId) void load(cityId, null, false, hidden);
+  }
+
+  async function updateVisibility(id) {
+    setUpdatingId(id);
+    setError("");
+    try {
+      await api(`/api/indications/eligible/${id}/hidden`, { method: showHidden ? "DELETE" : "PUT" });
+      setItems(previous => previous.filter(item => item.id !== id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -176,7 +201,7 @@ export default function IndicarListaPage() {
             state={state}
             cityName={cityName}
             onChange={onPlaceChange}
-            disabled={booting || resolving}
+            disabled={booting || resolving || loading || updatingId !== null}
           />
           {selectedLabel ? (
             <span className="indicar-field-hint">
@@ -194,6 +219,15 @@ export default function IndicarListaPage() {
 
       {error ? <p className="error-box">{error}</p> : null}
 
+      <div className="request-visibility-filter" role="group" aria-label="Filtrar pedidos por visibilidade">
+        <button type="button" aria-pressed={!showHidden}
+          disabled={booting || loading || resolving || updatingId !== null}
+          onClick={() => changeVisibilityFilter(false)}>Disponíveis</button>
+        <button type="button" aria-pressed={showHidden}
+          disabled={booting || loading || resolving || updatingId !== null}
+          onClick={() => changeVisibilityFilter(true)}>Ocultados</button>
+      </div>
+
       <section className="indicar-list reveal delay-2" aria-live="polite">
         {(loading || resolving) && items.length === 0 ? (
           <p className="indicar-loading">Carregando pedidos…</p>
@@ -205,7 +239,7 @@ export default function IndicarListaPage() {
               const when = formatWhen(item.createdAt);
               return (
                 <li key={item.id}>
-                  <Link className="indicar-card" href={`/indicar/${item.id}/nova`}>
+                  <article className="indicar-card">
                     <div className="indicar-card-top">
                       <span
                         className={`indicar-status indicar-status--${statusTone(item.status)}`}
@@ -216,7 +250,9 @@ export default function IndicarListaPage() {
                         <span className="indicar-when">{when}</span>
                       ) : null}
                     </div>
-                    <h3 className="indicar-card-title">{item.title}</h3>
+                    <h3 className="indicar-card-title">
+                      {showHidden ? item.title : <Link href={`/indicar/${item.id}/nova`}>{item.title}</Link>}
+                    </h3>
                     <div className="indicar-card-meta">
                       <span className="indicar-location" aria-label="Local">
                         <svg
@@ -235,11 +271,15 @@ export default function IndicarListaPage() {
                         </svg>
                         {item.cityName} ({item.cityState})
                       </span>
-                      <span className="indicar-card-cta" aria-hidden>
-                        Indicar →
-                      </span>
+                      <div className="request-visibility-actions">
+                        {!showHidden && <Link className="indicar-card-cta" href={`/indicar/${item.id}/nova`}>Indicar →</Link>}
+                        <button type="button" className="request-visibility-button"
+                          disabled={loading || updatingId !== null} onClick={() => updateVisibility(item.id)}>
+                          {updatingId === item.id ? "Salvando…" : showHidden ? "Restaurar pedido" : "Não quero indicar"}
+                        </button>
+                      </div>
                     </div>
-                  </Link>
+                  </article>
                 </li>
               );
             })}
@@ -259,7 +299,8 @@ export default function IndicarListaPage() {
               />
             </div>
             <h2>Nada por aqui agora</h2>
-            <p>{emptyMessage || "Não há pedidos disponíveis no momento."}</p>
+            <p>{emptyMessage || (showHidden ? "Você não tem pedidos ocultados nesta cidade." : "Não há pedidos disponíveis no momento.")}</p>
+            {!showHidden && <>
             <p className="indicar-empty-hint">
               Troque a cidade ou volte mais tarde — novos pedidos aparecem aqui.
             </p>
@@ -267,6 +308,7 @@ export default function IndicarListaPage() {
               Pedir uma indicação
               <span aria-hidden>→</span>
             </Link>
+            </>}
           </div>
         ) : null}
 
@@ -281,7 +323,7 @@ export default function IndicarListaPage() {
           <button
             className="indicar-more"
             type="button"
-            disabled={loading}
+            disabled={loading || resolving || updatingId !== null}
             onClick={() => load(cityId, nextCursor, true)}
           >
             {loading ? "Carregando…" : "Carregar mais"}

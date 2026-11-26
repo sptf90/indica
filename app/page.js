@@ -133,6 +133,7 @@ function DashboardHome({ user }) {
   const [pendingHelps, setPendingHelps] = useState([]);
   const [loadError, setLoadError] = useState("");
   const [pendingEmptyMessage, setPendingEmptyMessage] = useState("");
+  const [hidingId, setHidingId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +169,22 @@ function DashboardHome({ user }) {
       cancelled = true;
     };
   }, [user.cityId]);
+
+  async function hideRequest(id) {
+    setHidingId(id);
+    setLoadError("");
+    try {
+      await api(`/api/indications/eligible/${id}/hidden`, { method: "PUT" });
+      setPendingHelps(previous => previous.filter(item => item.id !== id));
+      const data = await api(`/api/indications?cityId=${encodeURIComponent(user.cityId)}&limit=6`);
+      setPendingHelps(data.items || []);
+      setPendingEmptyMessage(data.emptyMessage || "");
+    } catch (error) {
+      setLoadError(error.message);
+    } finally {
+      setHidingId(null);
+    }
+  }
 
   const helps = pendingHelps.map((item, index) => ({
     id: item.id,
@@ -331,7 +348,7 @@ function DashboardHome({ user }) {
           <ul className="activity-list">
             {helps.map((item) => (
               <li key={`help-${item.id}`}>
-                <div className="activity-row">
+                <div className="activity-row activity-row--dismissible">
                   <Link href={item.href} className="activity-main activity-main--help">
                     <CategoryIcon tone={item.category} />
                     <span className="activity-body">
@@ -371,6 +388,10 @@ function DashboardHome({ user }) {
                       Indicar →
                     </span>
                   </Link>
+                  <button type="button" className="request-visibility-button"
+                    disabled={hidingId !== null} onClick={() => hideRequest(item.id)}>
+                    {hidingId === item.id ? "Ocultando…" : "Não quero indicar"}
+                  </button>
                 </div>
               </li>
             ))}
