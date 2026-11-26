@@ -70,11 +70,16 @@ try {
     const eligible = await api(`/indications/eligible/${rid}`, users[1], undefined, 'GET');
     assert.equal(eligible.item.contactMode, mode);
     if (mode === 'whatsapp') {
-      const createdInd = await api('/indications', users[1], { requestId: rid, description: 'Contato', contactName: 'Clínica Sorriso', whatsappNumber: '(11) 99999-1234' }, 'POST', 201);
+      const createdInd = await api('/indications', users[1], { requestId: rid, contactName: 'Clínica Sorriso', whatsappNumber: '(11) 99999-1234' }, 'POST', 201);
+      const createdDetail = await api(`/indications/${createdInd.id}`, users[1], undefined, 'GET');
+      assert.equal(createdDetail.item.description, '');
       await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato', contactName: 'Clínica Sorriso', whatsappNumber: 'ruim' }, 'PATCH', 400);
       await api(`/indications/${createdInd.id}`, users[1], { description: 'Contato editado', contactName: 'Clínica Sorriso', whatsappNumber: '+55 (11) 99999-5678' }, 'PATCH');
       const detail = await api(`/indications/${createdInd.id}`, users[1], undefined, 'GET');
       assert.equal(detail.item.whatsappNumber, '5511999995678');
+      await api(`/indications/${createdInd.id}`, users[1], { description: '', contactName: 'Clínica Sorriso', whatsappNumber: '+55 (11) 99999-5678' }, 'PATCH');
+      const clearedDetail = await api(`/indications/${createdInd.id}`, users[1], undefined, 'GET');
+      assert.equal(clearedDetail.item.description, '');
       assert.equal(detail.item.contactName, 'Clínica Sorriso');
       await db.query('DELETE FROM notificacoes WHERE indicacao_id = ?', [createdInd.id]);
       await db.query('DELETE FROM indicacoes WHERE id = ?', [createdInd.id]);

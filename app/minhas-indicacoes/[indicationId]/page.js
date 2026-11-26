@@ -11,6 +11,7 @@ import IndicationContactFields from "@/components/IndicationContactFields";
 import { formatWhatsapp, validateIndicationContact } from "@/lib/indication-contact";
 import ReputationBadge from "@/components/ReputationBadge";
 import { api } from "@/lib/client-api";
+import { MAX_DESCRIPTION } from "@/lib/constants";
 
 function formatDelta(n) {
   const v = Number(n) || 0;
@@ -149,9 +150,9 @@ export default function MinhaIndicacaoDetailPage() {
     setError("");
     setSaving(true);
     try {
-      validateIndicationContact(item.contactMode, { place: selectedPlace, whatsappNumber, contactName });
       const links = item.links || [];
       const place = hasPlaceData(selectedPlace) ? selectedPlace : null;
+      validateIndicationContact(item.contactMode, { place, whatsappNumber, contactName, description, links });
       await api(`/api/indications/${indicationId}`, {
         method: "PATCH",
         body: JSON.stringify({ description, links, place, whatsappNumber, contactName }),
@@ -221,7 +222,7 @@ export default function MinhaIndicacaoDetailPage() {
         <>
           <div className="preview-box ind-detail-preview">
             <p className="ind-detail-preview-label">Sua indicação</p>
-            <p>{item.description}</p>
+            {item.description ? <p>{item.description}</p> : null}
             {item.links?.length ? (
               <ul>
                 {item.links.map((url) => (
@@ -277,12 +278,11 @@ export default function MinhaIndicacaoDetailPage() {
           }}
         >
           <label>
-            Descrição
+            Descrição (opcional)
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 500))}
-              maxLength={500}
-              required
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={MAX_DESCRIPTION}
             />
           </label>
           <IndicationContactFields mode={item.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}

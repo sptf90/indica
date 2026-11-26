@@ -10,6 +10,7 @@ import { hasPlaceData } from "@/lib/location";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
 import LocationPicker from "@/components/LocationPicker";
 import { api } from "@/lib/client-api";
+import { MAX_DESCRIPTION } from "@/lib/constants";
 
 function statusTone(status) {
   if (status === "open") return "ok";
@@ -50,16 +51,8 @@ export default function NovaIndicacaoPage() {
     setError("");
     if (!request?.acceptsIndications) { setError(request?.message || "Aguarde o carregamento do pedido."); return; }
     try {
-      validateIndicationContact(request.contactMode, { place: selectedPlace, whatsappNumber, contactName });
+      validateIndicationContact(request.contactMode, { place: selectedPlace, whatsappNumber, contactName, description });
     } catch (err) { setError(err.message); return; }
-    if (!description.trim()) {
-      setError("Descrição obrigatória.");
-      return;
-    }
-    if (description.trim().length > 500) {
-      setError("Descrição deve ter no máximo 500 caracteres.");
-      return;
-    }
     setStep("preview");
   }
 
@@ -125,7 +118,7 @@ export default function NovaIndicacaoPage() {
             <p>Confira antes de enviar. Ainda dá para editar.</p>
           </header>
           <div className="indicar-n-preview">
-            <p>{description}</p>
+            {description.trim() ? <p>{description.trim()}</p> : null}
             {request?.contactMode === "whatsapp" ? <p><strong>{contactName}</strong></p> : null}
             {needsWhatsapp(request?.contactMode) && whatsappNumber ? <p><a href={`https://wa.me/${normalizeWhatsapp(whatsappNumber)}`} target="_blank" rel="noreferrer">WhatsApp: +{normalizeWhatsapp(whatsappNumber)}</a></p> : null}
             {previewPlace ? (
@@ -208,23 +201,22 @@ export default function NovaIndicacaoPage() {
       <section className="indicar-n-card">
         <header className="indicar-n-card-head">
           <h1>Nova indicação</h1>
-          <p>Descreva sua indicação e informe os dados solicitados no pedido.</p>
+          <p>Informe os dados solicitados no pedido.</p>
         </header>
 
         <form className="indicar-n-form" onSubmit={goPreview}>
           <label className="indicar-n-field">
             <span className="indicar-n-label">
               Descrição
-              <span className="indicar-n-req">obrigatório</span>
+              <span className="indicar-n-opt">opcional</span>
             </span>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 500))}
-              maxLength={500}
-              required
-              placeholder="Quem você indica e por quê?"
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={MAX_DESCRIPTION}
+              placeholder="Quer acrescentar algum detalhe sobre a indicação?"
             />
-            <span className="indicar-n-hint">{description.length}/500</span>
+            <span className="indicar-n-hint">{description.length}/{MAX_DESCRIPTION}</span>
           </label>
 
           <IndicationContactFields mode={request?.contactMode} contactName={contactName} onContactNameChange={setContactName} whatsappNumber={whatsappNumber}

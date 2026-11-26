@@ -363,7 +363,7 @@ function PedidoDetailPage() {
                         {cycleLabel}
                       </span>
                     </div>
-                    <h3 className="chosen-desc">{item.description}</h3>
+                    {item.description ? <h3 className="chosen-desc">{item.description}</h3> : null}
                     {item.contactName ? <p>{item.contactName}</p> : null}
                     {item.place ? (
                       <div className="cmp-place">
@@ -471,7 +471,7 @@ function PedidoDetailPage() {
                     ) : null}
                   </div>
 
-                  <p className="cmp-desc">{item.description}</p>
+                  {item.description ? <p className="cmp-desc">{item.description}</p> : null}
                   {item.contactName ? <p>{item.contactName}</p> : null}
 
                   {item.place ? (
