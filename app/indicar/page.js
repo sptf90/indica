@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
+import RequestPhoto from "@/components/RequestPhoto";
 import { api } from "@/lib/client-api";
 
 const TIPS = [
@@ -253,6 +254,7 @@ export default function IndicarListaPage() {
                     <h3 className="indicar-card-title">
                       {showHidden ? item.title : <Link href={`/indicar/${item.id}/nova`}>{item.title}</Link>}
                     </h3>
+                    <RequestPhoto src={item.photoUrl} thumbnail />
                     <div className="indicar-card-meta">
                       <span className="indicar-location" aria-label="Local">
                         <svg
@@ -272,11 +274,11 @@ export default function IndicarListaPage() {
                         {item.cityName} ({item.cityState})
                       </span>
                       <div className="request-visibility-actions">
-                        {!showHidden && <Link className="indicar-card-cta" href={`/indicar/${item.id}/nova`}>Indicar →</Link>}
                         <button type="button" className="request-visibility-button"
                           disabled={loading || updatingId !== null} onClick={() => updateVisibility(item.id)}>
                           {updatingId === item.id ? "Salvando…" : showHidden ? "Restaurar pedido" : "Não quero indicar"}
                         </button>
+                        {!showHidden && <Link className="indicar-card-cta" href={`/indicar/${item.id}/nova`}>Indicar →</Link>}
                       </div>
                     </div>
                   </article>

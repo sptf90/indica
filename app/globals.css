@@ -4877,6 +4877,26 @@ main.page.page-indicar {
 .request-visibility-button:disabled { opacity: 0.6; cursor: default; }
 .indicar-card-title a { color: inherit; }
 
+.request-photo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 24rem;
+  margin-block-start: 0.5rem;
+  border-radius: 0.65rem;
+  object-fit: contain;
+}
+
+.request-photo--thumbnail {
+  width: 7rem;
+  height: 6rem;
+  margin-block-start: 0;
+  background: var(--brand-soft);
+}
+
+.request-photo-remove { justify-self: start; }
+
 @media (max-width: 720px) {
   .activity-row--dismissible { grid-template-columns: minmax(0, 1fr); }
   .activity-row--dismissible .request-visibility-button { justify-self: end; }

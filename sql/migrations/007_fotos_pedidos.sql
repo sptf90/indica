@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS pedido_fotos (
+  pedido_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  tipo VARCHAR(32) NOT NULL,
+  conteudo MEDIUMBLOB NOT NULL,
+  CONSTRAINT fk_pedido_fotos_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -3,6 +3,7 @@
 import MobileHelp from "@/components/MobileHelp";
 
 import Link from "next/link";
+import RequestPhoto from "@/components/RequestPhoto";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Countdown from "@/components/Countdown";
@@ -270,6 +271,7 @@ function PedidoDetailPage() {
             </p>
           )}
         </div>
+        <RequestPhoto src={request.photoUrl} />
         {request.evaluationDeadlineAt ? (
           <Countdown
             deadlineAt={request.evaluationDeadlineAt}

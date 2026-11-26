@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ContactModePicker from "@/components/ContactModePicker";
+import RequestPhoto from "@/components/RequestPhoto";
 import { isRequestContactMode, validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
-
-const DRAFT_KEY = "indica_request_draft";
+import { loadRequestDraft, saveRequestDraft } from "@/lib/request-draft";
+import { REQUEST_PHOTO_HINT, REQUEST_PHOTO_TYPES, requestPhotoError } from "@/lib/request-photo";
 
 const TIPS = [
   "Seja específico",
@@ -29,37 +30,43 @@ export default function PedirPage() {
   const [cityName, setCityName] = useState("");
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState("");
+  const [photo, setPhoto] = useState(null);
+  const [readingPhoto, setReadingPhoto] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const photoSrc = photo?.src;
+
+  useEffect(() => () => {
+    if (photoSrc) URL.revokeObjectURL(photoSrc);
+  }, [photoSrc]);
 
   useEffect(() => {
+    let active = true;
     api("/api/auth/me")
-      .then((meData) => {
+      .then(async (meData) => {
+        const draft = await loadRequestDraft();
+        if (!active) return;
         setMe(meData.user);
-        const draft =
-          typeof window !== "undefined"
-            ? sessionStorage.getItem(DRAFT_KEY)
-            : null;
         if (draft) {
-          try {
-            const parsed = JSON.parse(draft);
-            setTitle(parsed.title || "");
-            setDetails(parsed.details || "");
-            setContactMode(isRequestContactMode(parsed.contactMode) ? parsed.contactMode : "");
-            setCityId(String(parsed.cityId || meData.user?.cityId || ""));
-            setState(parsed.state || meData.user?.cityState || "");
-            setCityName(parsed.cityName || meData.user?.cityName || "");
-            return;
-          } catch {
-            // ignore
+          setTitle(draft.title || "");
+          setDetails(draft.details || "");
+          setContactMode(isRequestContactMode(draft.contactMode) ? draft.contactMode : "");
+          if (draft.photo) {
+            setPhoto({ file: draft.photo, src: URL.createObjectURL(draft.photo) });
+          } else if (draft.photoUnavailable) {
+            setPhotoError("Não foi possível recuperar a foto da prévia. Selecione o arquivo novamente.");
           }
         }
-        setCityId(String(meData.user?.cityId || ""));
-        setState(meData.user?.cityState || "");
-        setCityName(meData.user?.cityName || "");
+        setCityId(String(draft?.cityId || meData.user?.cityId || ""));
+        setState(draft?.state || meData.user?.cityState || "");
+        setCityName(draft?.cityName || meData.user?.cityName || "");
       })
       .catch((err) => {
+        if (!active) return;
         if (err.status === 401) router.push("/login");
         else setError(err.message);
       });
+    return () => { active = false; };
   }, [router]);
 
   async function onPlaceChange({ state: nextState, cityName: nextCity }) {
@@ -88,8 +95,32 @@ export default function PedirPage() {
     }
   }
 
-  function goPreview(event) {
+  async function choosePhoto(event) {
+    const file = event.currentTarget.files[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    const validationError = requestPhotoError(file);
+    setPhotoError(validationError || "");
+    if (validationError) return;
+
+    setReadingPhoto(true);
+    const src = URL.createObjectURL(file);
+    try {
+      const image = new window.Image();
+      image.src = src;
+      await image.decode();
+      setPhoto({ file, src });
+    } catch {
+      URL.revokeObjectURL(src);
+      setPhotoError("Não foi possível abrir essa foto. Escolha outra imagem.");
+    } finally {
+      setReadingPhoto(false);
+    }
+  }
+
+  async function goPreview(event) {
     event.preventDefault();
+    if (readingPhoto || savingDraft) return;
     setError("");
     try { validateContactMode(contactMode); } catch (err) { setError(err.message); return; }
     if (!title.trim()) {
@@ -104,9 +135,9 @@ export default function PedirPage() {
       setError("Aguarde a cidade ser confirmada.");
       return;
     }
-    sessionStorage.setItem(
-      DRAFT_KEY,
-      JSON.stringify({
+    setSavingDraft(true);
+    try {
+      await saveRequestDraft({
         title: title.trim(),
         details: details.trim(),
         contactMode,
@@ -114,8 +145,13 @@ export default function PedirPage() {
         state,
         cityName,
         cityLabel: `${cityName} (${state})`,
-      })
-    );
+      }, photo?.file);
+    } catch {
+      setError("Não foi possível guardar a prévia neste navegador. Tente novamente.");
+      return;
+    } finally {
+      setSavingDraft(false);
+    }
     router.push("/pedir/preview");
   }
 
@@ -219,16 +255,41 @@ export default function PedirPage() {
             />
           </label>
 
+          <div className="pedir-field">
+            <label className="pedir-label" htmlFor="pedido-foto">
+              Foto <span className="pedir-opt">opcional</span>
+            </label>
+            <input
+              id="pedido-foto"
+              type="file"
+              accept={REQUEST_PHOTO_TYPES.join(",")}
+              aria-describedby="pedido-foto-ajuda"
+              disabled={!me || readingPhoto || savingDraft}
+              onChange={choosePhoto}
+            />
+            <span className="pedir-field-hint" id="pedido-foto-ajuda">{REQUEST_PHOTO_HINT}</span>
+            {photo ? (
+              <>
+                <RequestPhoto src={photoSrc} />
+                <button className="request-visibility-button request-photo-remove" type="button"
+                  disabled={readingPhoto || savingDraft} onClick={() => { setPhoto(null); setPhotoError(""); }}>
+                  Remover foto
+                </button>
+              </>
+            ) : null}
+            {photoError ? <p className="error-box" role="alert">{photoError}</p> : null}
+          </div>
+
           <ContactModePicker value={contactMode} onChange={setContactMode} disabled={resolving} />
 
           <div className="pedir-actions">
             <button
               className="pedir-submit"
               type="submit"
-              disabled={resolving}
+              disabled={resolving || readingPhoto || savingDraft}
             >
-              {resolving ? "Confirmando cidade…" : "Pré-visualizar"}
-              {!resolving ? (
+              {resolving ? "Confirmando cidade…" : readingPhoto ? "Carregando foto…" : savingDraft ? "Guardando prévia…" : "Pré-visualizar"}
+              {!resolving && !readingPhoto && !savingDraft ? (
                 <span className="btn-arrow" aria-hidden>
                   →
                 </span>

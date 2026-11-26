@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import IndicationContactFields from "@/components/IndicationContactFields";
+import RequestPhoto from "@/components/RequestPhoto";
 import { validateIndicationContact, normalizeWhatsapp, contactModeLabel, needsMaps, needsWhatsapp } from "@/lib/indication-contact";
 import { hasPlaceData } from "@/lib/location";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
@@ -114,6 +115,7 @@ export default function NovaIndicacaoPage() {
                 {request.cityName} ({request.cityState})
               </span>
             </p>
+            <RequestPhoto src={request.photoUrl} />
           </aside>
         ) : null}
 
@@ -199,6 +201,7 @@ export default function NovaIndicacaoPage() {
           {request.details ? (
             <p className="indicar-n-context-details">{request.details}</p>
           ) : null}
+          <RequestPhoto src={request.photoUrl} />
         </aside>
       ) : null}
 

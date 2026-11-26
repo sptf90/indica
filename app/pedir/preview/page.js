@@ -1,13 +1,13 @@
 "use client";
 
 import MobileHelp from "@/components/MobileHelp";
+import RequestPhoto from "@/components/RequestPhoto";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { contactModeLabel, isRequestContactMode } from "@/lib/indication-contact";
 import { api } from "@/lib/client-api";
-
-const DRAFT_KEY = "indica_request_draft";
+import { clearRequestDraft, loadRequestDraft } from "@/lib/request-draft";
 
 function PinIcon() {
   return (
@@ -25,51 +25,63 @@ function PinIcon() {
 export default function PedirPreviewPage() {
   const router = useRouter();
   const [draft, setDraft] = useState(null);
+  const [photoSrc, setPhotoSrc] = useState("");
   const [cityLabel, setCityLabel] = useState("");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-    const raw = sessionStorage.getItem(DRAFT_KEY);
-    if (!raw) {
-      router.replace("/pedir");
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (!isRequestContactMode(parsed.contactMode)) { router.replace("/pedir"); return; }
-      setDraft(parsed);
-      if (parsed.cityLabel) {
-        setCityLabel(parsed.cityLabel);
-      } else if (parsed.cityName && parsed.state) {
-        setCityLabel(`${parsed.cityName} (${parsed.state})`);
+    let active = true;
+    let src = "";
+    loadRequestDraft().then(async (data) => {
+      if (!active) return;
+      if (!isRequestContactMode(data?.contactMode) || data.photoUnavailable) {
+        router.replace("/pedir");
+        return;
+      }
+      if (data.photo) {
+        src = URL.createObjectURL(data.photo);
+        setPhotoSrc(src);
+      }
+      setDraft(data);
+      if (data.cityLabel) {
+        setCityLabel(data.cityLabel);
+      } else if (data.cityName && data.state) {
+        setCityLabel(`${data.cityName} (${data.state})`);
       } else {
-        api("/api/cities").then((data) => {
-          const city = (data.cities || []).find(
-            (c) => Number(c.id) === Number(parsed.cityId)
+        const result = await api("/api/cities");
+        if (active) {
+          const city = (result.cities || []).find(
+            (c) => Number(c.id) === Number(data.cityId)
           );
           setCityLabel(city ? city.label : "");
-        });
+        }
       }
-    } catch {
-      router.replace("/pedir");
-    }
-    }, 0);
-    return () => clearTimeout(timer);
+    }).catch(() => {
+      if (active) router.replace("/pedir");
+    });
+    return () => {
+      active = false;
+      if (src) URL.revokeObjectURL(src);
+    };
   }, [router]);
 
   async function publish() {
-    if (!draft) return;
+    if (!draft || loading || ok) return;
     setLoading(true);
     setError("");
     try {
-      await api("/api/requests", {
-        method: "POST",
-        body: JSON.stringify(draft),
-      });
-      sessionStorage.removeItem(DRAFT_KEY);
+      const { photo, ...fields } = draft;
+      let body = JSON.stringify(fields);
+      if (photo) {
+        const form = new FormData();
+        for (const [key, value] of Object.entries(fields)) form.set(key, value);
+        form.set("photo", photo);
+        body = form;
+      }
+      await api("/api/requests", { method: "POST", body });
+      clearRequestDraft();
       setOk("Pedido publicado com sucesso.");
       setTimeout(() => {
         router.push("/");
@@ -136,6 +148,12 @@ export default function PedirPreviewPage() {
               {details || "Nenhum detalhe informado"}
             </dd>
           </div>
+          {photoSrc ? (
+            <div className="page-previa-field page-previa-field--block">
+              <dt>Foto</dt>
+              <dd><RequestPhoto src={photoSrc} /></dd>
+            </div>
+          ) : null}
         </dl>
       </section>
 
@@ -147,7 +165,7 @@ export default function PedirPreviewPage() {
           className="page-previa-cta"
           type="button"
           onClick={publish}
-          disabled={loading}
+          disabled={loading || Boolean(ok)}
         >
           {loading ? "Publicando…" : "Confirmar publicação"}
         </button>

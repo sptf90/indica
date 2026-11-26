@@ -1,5 +1,6 @@
 import { assertConsumerUser, jsonError, requireUser } from "@/lib/auth";
 import { getPool } from "@/lib/db";
+import { readNewRequest } from "@/lib/request-photo-server";
 import { createRequest, listMyRequests } from "@/lib/requests-service";
 
 export async function GET() {
@@ -17,8 +18,8 @@ export async function POST(request) {
   try {
     if (!getPool()) return jsonError("Banco não configurado.", 503);
     const user = assertConsumerUser(await requireUser());
-    const body = await request.json();
-    const item = await createRequest(user, body);
+    const { body, photo } = await readNewRequest(request);
+    const item = await createRequest(user, body, photo);
     return Response.json({ item }, { status: 201 });
   } catch (error) {
     return jsonError(error.message || "Erro", error.status || 500);
