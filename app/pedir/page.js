@@ -12,7 +12,8 @@ import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
 import { REQUEST_RESPONSE_HOURS } from "@/lib/constants";
 import { loadRequestDraft, saveRequestDraft } from "@/lib/request-draft";
-import { REQUEST_PHOTO_HINT, REQUEST_PHOTO_TYPES, requestPhotoError } from "@/lib/request-photo";
+import { REQUEST_PHOTO_HINT, REQUEST_PHOTO_TYPES, requestPhotoError, shrinkCameraPhoto } from "@/lib/request-photo";
+import { useTouchDevice } from "@/lib/use-touch-device";
 
 const TIPS = [
   "Seja específico",
@@ -36,6 +37,7 @@ export default function PedirPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const photoSrc = photo?.src;
+  const touch = useTouchDevice();
 
   useEffect(() => () => {
     if (photoSrc) URL.revokeObjectURL(photoSrc);
@@ -96,15 +98,21 @@ export default function PedirPage() {
     }
   }
 
-  async function choosePhoto(event) {
-    const file = event.currentTarget.files[0];
+  async function choosePhoto(event, fromCamera = false) {
+    let file = event.currentTarget.files[0];
     event.currentTarget.value = "";
     if (!file) return;
+    setReadingPhoto(true);
+    if (fromCamera) {
+      try { file = await shrinkCameraPhoto(file); } catch { /* segue com o arquivo original */ }
+    }
     const validationError = requestPhotoError(file);
     setPhotoError(validationError || "");
-    if (validationError) return;
+    if (validationError) {
+      setReadingPhoto(false);
+      return;
+    }
 
-    setReadingPhoto(true);
     const src = URL.createObjectURL(file);
     try {
       const image = new window.Image();
@@ -268,6 +276,24 @@ export default function PedirPage() {
               disabled={!me || readingPhoto || savingDraft}
               onChange={choosePhoto}
             />
+            {touch ? (
+              <>
+                <input
+                  id="pedido-foto-camera"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  disabled={!me || readingPhoto || savingDraft}
+                  onChange={(event) => choosePhoto(event, true)}
+                />
+                <button className="request-visibility-button" type="button"
+                  disabled={!me || readingPhoto || savingDraft}
+                  onClick={() => document.getElementById("pedido-foto-camera").click()}>
+                  Tirar foto com a câmera
+                </button>
+              </>
+            ) : null}
             <span className="pedir-field-hint" id="pedido-foto-ajuda">{REQUEST_PHOTO_HINT}</span>
             {photo ? (
               <>

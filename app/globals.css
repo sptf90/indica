@@ -4875,6 +4875,8 @@ main.page.page-indicar {
 }
 .request-visibility-filter button:disabled,
 .request-visibility-button:disabled { opacity: 0.6; cursor: default; }
+.contact-agenda-button,
+.pedir-field > .request-visibility-button { align-self: flex-start; min-height: 2.75rem; padding-inline: 1rem; }
 .indicar-card-title a { color: inherit; }
 
 .request-photo {
