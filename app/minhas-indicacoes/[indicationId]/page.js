@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { hasPlaceData } from "@/lib/location";
 import LocationPicker from "@/components/LocationPicker";
 import PlaceNavigationLinks from "@/components/PlaceNavigationLinks";
+import RequestPhoto from "@/components/RequestPhoto";
 import IndicationContactFields from "@/components/IndicationContactFields";
 import { formatWhatsapp, validateIndicationContact } from "@/lib/indication-contact";
 import ReputationBadge from "@/components/ReputationBadge";
@@ -214,6 +215,8 @@ export default function MinhaIndicacaoDetailPage() {
           Pedido: {item.requestStatusLabel}
           {" · "}Solicitante oculto
         </p>
+        {item.requestDetails ? <p>{item.requestDetails}</p> : null}
+        <RequestPhoto src={item.requestPhotoUrl} />
       </header>
 
       {showOutcome ? <OutcomePanel outcome={outcome} /> : null}

@@ -10,6 +10,7 @@ import RequestPhoto from "@/components/RequestPhoto";
 import { isRequestContactMode, validateContactMode } from "@/lib/indication-contact";
 import IbgeCityPicker from "@/components/IbgeCityPicker";
 import { api } from "@/lib/client-api";
+import { REQUEST_RESPONSE_HOURS } from "@/lib/constants";
 import { loadRequestDraft, saveRequestDraft } from "@/lib/request-draft";
 import { REQUEST_PHOTO_HINT, REQUEST_PHOTO_TYPES, requestPhotoError } from "@/lib/request-photo";
 
@@ -197,7 +198,7 @@ export default function PedirPage() {
       <section className="pedir-card reveal delay-1">
         <header className="pedir-card-head">
           <h2>Monte seu pedido</h2>
-          <p>Depois você confere na prévia antes de publicar.</p>
+          <p>Confira a prévia antes de publicar. O pedido pode receber indicações por até {REQUEST_RESPONSE_HOURS} horas.</p>
         </header>
 
         <form className="pedir-form" onSubmit={goPreview}>
